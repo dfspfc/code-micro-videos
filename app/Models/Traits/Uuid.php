@@ -12,4 +12,8 @@ trait Uuid
             $obj->id = RamseyUuid::uuid4()->toString();
         });
     }
+
+    public static function isValid($uuid)  {
+        return RamseyUuid::isValid($uuid);
+    }
 }
