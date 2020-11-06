@@ -13,14 +13,12 @@ class GenderTest extends TestCase
 
     public function testListShouldReturn200()
     {
-        $gender1 = factory(Gender::class)->create();
-        $gender2 = factory(Gender::class)->create();
-        $expected = [$gender1->toArray(), $gender2->toArray()];
+        $gender = factory(Gender::class)->create()->toArray();
         $response = $this->get(route('genders.index'));
         
         $response
             ->assertStatus(200)
-            ->assertJson($expected);
+            ->assertJson([$gender]);
     }
 
     public function testShowSpecificGenderShouldReturn200()

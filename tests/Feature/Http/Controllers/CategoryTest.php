@@ -13,14 +13,12 @@ class CategoryTest extends TestCase
 
     public function testListShouldReturn200()
     {
-        $category1 = factory(Category::class)->create();
-        $category2 = factory(Category::class)->create();
-        $expected = [$category1->toArray(), $category2->toArray()];
+        $category = factory(Category::class)->create()->toArray();
         $response = $this->get(route('categories.index'));
-        
+
         $response
             ->assertStatus(200)
-            ->assertJson($expected);
+            ->assertJson([$category]);
     }
 
     public function testShowSpecificCategoryShouldReturn200()
