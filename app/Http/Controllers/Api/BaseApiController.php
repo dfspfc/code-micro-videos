@@ -9,11 +9,16 @@ abstract class BaseApiController extends Controller
 {
     protected abstract function model();
     protected abstract function storeRules();
-    //protected abstract function updateRules();
+    protected abstract function updateRules();
 
     public function index()
     {
         return $this->model()::all();
+    }
+    
+    public function show($id)
+    {
+        return $this->findObjectFromModel($id);
     }
     
     public function store(Request $request)
@@ -23,11 +28,6 @@ abstract class BaseApiController extends Controller
         $obj->refresh();
         
         return $obj;
-    }
-
-    public function show($id)
-    {
-        return $this->findObjectFromModel($id);
     }
 
     public function update(Request $request, $id)
@@ -43,7 +43,8 @@ abstract class BaseApiController extends Controller
     public function destroy($id)
     {
         $obj = $this->findObjectFromModel($id);
-        $obj->delete;
+        $obj->delete();
+
         return response()->noContent();
     }
 

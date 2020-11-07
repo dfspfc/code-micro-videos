@@ -5,6 +5,7 @@ namespace Tests\Stubs\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class CategoryStub extends Model
 {
