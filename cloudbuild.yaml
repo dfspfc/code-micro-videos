@@ -24,7 +24,7 @@ steps:
     name: 'docker'
     args: ['exec', '-t', 'micro-videos-app', 'cp', '.env.example', '.env.testing']
 
-  - id: "Copying .env.testing"
+  - id: "Showing .env.testing"
     name: 'docker'
     args: ['exec', '-t', 'micro-videos-app', 'cat', '.env.testing']
 
