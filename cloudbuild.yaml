@@ -1,5 +1,9 @@
 steps:
 
-  - id: "Rodando docker-compose"
+  - id: "Running docker-compose"
     name: 'docker/compose'
     args: ['-f', 'docker-compose.cloudbuild.yaml', 'up', '-d']
+
+  - id: "Running docker ps"
+    name: 'docker'
+    args: ['ps']
