@@ -18,7 +18,7 @@ steps:
 
   - id: "Copying .env"
     name: 'docker'
-    args: ['exec', '-t', 'micro-videos-app', 'cp', '.env.example', '.env']
+    args: ['exec', '-t', 'micro-videos-app', 'cp', '.env.example', '.env.testing']
 
   - id: "Running key:generete"
     name: 'docker'
