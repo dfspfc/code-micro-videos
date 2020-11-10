@@ -5,11 +5,10 @@ namespace Tests\Feature\Http\Controllers;
 use App\Models\Category;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Illuminate\Support\Facades\Lang;
 
 class CategoryTest extends TestCase
 {
-    use DatabaseMigrations;
+    use DatabaseMigrations, JsonFragmentValidation;
 
     public function testListShouldReturn200()
     {
@@ -31,36 +30,35 @@ class CategoryTest extends TestCase
             ->assertJson($category->toArray());
     }
 
-    public function testCreateNotPassingAttributeNameShouldReturn422()
+    public function testCreatePassingNoAttributesShouldReturn422()
     {
         $response = $this->json('POST', route('categories.store'), []);
-        $this->assertNameRequired($response);
+        $this->assertRequired($response, 'name');
     }
 
-    public function testCreatePassingAttributeNameLargerThan255CharactersReturn422()
+    public function testCreatePassingAttributesLargerThan255CharactersShouldReturn422()
     {
         $response = $this->json(
             'POST',
             route('categories.store'),
             ['name' => str_repeat('a', 256)]
         );
-        $this->assertNameMaxCharacters($response);
+        $this->assertMax255($response, 'name');
     }
 
-    public function testCreatePassingAttributeIsActiveDifferentFromBooleanShouldReturn422()
+    public function testCreatePassingAttributesDifferentFromBooleanShouldReturn422()
     {
         $response = $this->json(
             'POST',
             route('categories.store'),
             [
-                'name' => 'valid name',
                 'is_active' => 'a',
             ]
         );
-        $this->assertIsActiveIsInvalid($response);
+        $this->assertBoolean($response, 'is_active');
     }
 
-    public function testUpdateNotPassingAttributeNameShouldReturn422()
+    public function testUpdateNotPassingAnyAttributeShouldReturn422()
     {
         $category = factory(Category::class)->create();
         $response = $this->json(
@@ -71,10 +69,10 @@ class CategoryTest extends TestCase
             ),
             []
         );
-        $this->assertNameRequired($response);
+        $this->assertRequired($response, 'name');
     }
 
-    public function testUpdatePassingAttributeNameLargerThan255CharactersReturn422()
+    public function testUpdatePassingAttributesLargeThan255CharactersShouldReturn422()
     {
         $category = factory(Category::class)->create();
         $response = $this->json(
@@ -85,10 +83,10 @@ class CategoryTest extends TestCase
             ),
             ['name' => str_repeat('a', 256)]
         );
-        $this->assertNameMaxCharacters($response);
+        $this->assertMax255($response, 'name');
     }
 
-    public function testUpdatePassingAttributeIsActiveDifferentFromBooleanShouldReturn422()
+    public function testUpdatePassingAttributesDifferentFromBooleanShouldReturn422()
     {
         $category = factory(Category::class)->create();
         $response = $this->json(
@@ -98,11 +96,10 @@ class CategoryTest extends TestCase
                 ['category' => $category->id],
             ),
             [
-                'name' => 'valid name',
                 'is_active' => 'a',
             ]
         );
-        $this->assertIsActiveIsInvalid($response);
+        $this->assertBoolean($response, 'is_active');
     }
 
     public function testCreatePassingAttributeNameShouldCreateWithAllDefaultFieldsAndReturn201()
@@ -192,32 +189,5 @@ class CategoryTest extends TestCase
             ->get()
             ->first();
         $this->assertNotNull($deletedCategory->deleted_at);
-    }
-
-    private function assertNameRequired($response) {
-        $response
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['name'])
-            ->assertJsonFragment([
-                Lang::get('validation.required', ['attribute' => 'name'])
-            ]);
-    }
-
-    private function assertNameMaxCharacters($response) {
-        $response
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['name'])
-            ->assertJsonFragment([
-                Lang::get('validation.max.string', ['attribute' => 'name', 'max' => 255])
-            ]);
-    }
-
-    private function assertIsActiveIsInvalid($response) {
-        $response
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['is_active'])
-            ->assertJsonFragment([
-                Lang::get('validation.boolean', ['attribute' => 'is active'])
-            ]);
     }
 }

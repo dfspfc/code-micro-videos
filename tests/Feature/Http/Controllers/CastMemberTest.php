@@ -5,11 +5,10 @@ namespace Tests\Feature\Http\Controllers;
 use App\Models\CastMember;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Illuminate\Support\Facades\Lang;
 
 class CastMemberTest extends TestCase
 {
-    use DatabaseMigrations;
+    use DatabaseMigrations, JsonFragmentValidation;
 
     public function testListShouldReturn200()
     {
@@ -31,36 +30,35 @@ class CastMemberTest extends TestCase
             ->assertJson($castMember->toArray());
     }
 
-    public function testCreateNotPassingAttributeNameShouldReturn422()
+    public function testCreatePassingNoAttributesShouldReturn422()
     {
         $response = $this->json('POST', route('cast_members.store'), []);
-        $this->assertNameRequired($response);
+        $this->assertRequired($response, 'name');
     }
 
-    public function testCreatePassingAttributeNameLargerThan255CharactersReturn422()
+    public function testCreatePassingAttributesLargerThan255CharactersShouldReturn422()
     {
         $response = $this->json(
             'POST',
             route('cast_members.store'),
             ['name' => str_repeat('a', 256)]
         );
-        $this->assertNameMaxCharacters($response);
+        $this->assertMax255($response, 'name');
     }
 
-    public function testCreatePassingAttributeTypeDifferentFromWhatIsAllowedShouldReturn422()
+    public function testCreatePassingAttributesDifferentFromBooleanShouldReturn422()
     {
         $response = $this->json(
             'POST',
             route('cast_members.store'),
             [
-                'name' => 'valid name',
-                'type' => 3,
+                'type' => 'invalid type',
             ]
         );
-        $this->assertTypeInvalid($response);
+        $this->assertNotIn($response, 'type');
     }
 
-    public function testUpdateNotPassingAttributeNameShouldReturn422()
+    public function testUpdateNotPassingAnyAttributeShouldReturn422()
     {
         $castMember = factory(CastMember::class)->create();
         $response = $this->json(
@@ -71,10 +69,10 @@ class CastMemberTest extends TestCase
             ),
             []
         );
-        $this->assertNameRequired($response);
+        $this->assertRequired($response, 'name');
     }
 
-    public function testUpdatePassingAttributeNameLargerThan255CharactersReturn422()
+    public function testUpdatePassingAttributesLargeThan255CharactersShouldReturn422()
     {
         $castMember = factory(CastMember::class)->create();
         $response = $this->json(
@@ -85,10 +83,10 @@ class CastMemberTest extends TestCase
             ),
             ['name' => str_repeat('a', 256)]
         );
-        $this->assertNameMaxCharacters($response);
+        $this->assertMax255($response, 'name');
     }
 
-    public function testUpdatePassingAttributeTypeDifferentFromWhatIsAllowedShouldReturn422()
+    public function testUpdatePassingAttributesDifferentFromBooleanShouldReturn422()
     {
         $castMember = factory(CastMember::class)->create();
         $response = $this->json(
@@ -98,11 +96,10 @@ class CastMemberTest extends TestCase
                 ['cast_member' => $castMember->id],
             ),
             [
-                'name' => 'valid name',
-                'type' => 3,
+                'type' => 'not valid',
             ]
         );
-        $this->assertTypeInvalid($response);
+        $this->assertNotIn($response, 'type');
     }
 
     public function testCreatePassingAllFieldsShouldCreateAndReturn201()
@@ -170,32 +167,5 @@ class CastMemberTest extends TestCase
             ->get()
             ->first();
         $this->assertNotNull($deletedCastMember->deleted_at);
-    }
-
-    private function assertNameRequired($response) {
-        $response
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['name'])
-            ->assertJsonFragment([
-                Lang::get('validation.required', ['attribute' => 'name'])
-            ]);
-    }
-
-    private function assertNameMaxCharacters($response) {
-        $response
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['name'])
-            ->assertJsonFragment([
-                Lang::get('validation.max.string', ['attribute' => 'name', 'max' => 255])
-            ]);
-    }
-
-    private function assertTypeInvalid($response) {
-        $response
-            ->assertStatus(422)
-            ->assertJsonValidationErrors(['type'])
-            ->assertJsonFragment([
-                Lang::get('validation.in', ['attribute' => 'type'])
-            ]);
     }
 }

@@ -3,10 +3,7 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Category;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Facades\App;
-use PhpParser\Node\Stmt\Catch_;
 use PHPUnit\Framework\TestCase;
 use App\Models\Traits\Uuid;
 
@@ -29,7 +26,7 @@ class CategoryTest extends TestCase
     {
         $expected = [
             'id' => 'string',
-            'is_active' => 'bool',
+            'is_active' => 'boolean',
         ];
         $this->assertEquals($expected, $this->category->getCasts());
     }

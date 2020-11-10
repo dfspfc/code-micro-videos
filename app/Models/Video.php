@@ -1,0 +1,43 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use App\Models\Traits\Uuid;
+
+class Video extends Model
+{
+    use SoftDeletes, Uuid;
+
+    const RATING_LIST = ['L', '10', '12', '14', '16', '18'];
+
+    protected $fillable = [
+        'title', 
+        'description',
+        'year_launched', 
+        'opened',
+        'rating', 
+        'duration',
+    ];
+    protected $dates = ['deleted_at'];
+    protected $casts = [
+        'id' => 'string',
+        'opened' => 'boolean',
+        'year_launched' => 'integer',
+        'duration' => 'integer',
+    ];
+    public $incrementing = false;
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class);
+    }
+
+    public function genders()
+    {
+        return $this->belongsToMany(Gender::class);
+    }
+}
+
+
