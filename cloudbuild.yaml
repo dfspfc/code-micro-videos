@@ -34,10 +34,10 @@ steps:
 
   - id: "Running migrations"
     name: 'docker'
-    args: ['exec', '-t', 'micro-videos-app', 'php', '/var/www/artisan', 'migrate']
+    args: ['exec', '-t', 'micro-videos-app', 'php', 'var/www/artisan', 'migrate']
 
   - id: "Running unit tests"
     name: 'docker'
-    args: ['exec', '-t', 'micro-videos-app', 'php', '/vendor/bin/phpunit', '-c', '/var/www/phpunit.xml']
+    args: ['exec', '-t', 'micro-videos-app', 'php', 'vendor/bin/phpunit', '-c', '/var/www/phpunit.xml']
 
 
