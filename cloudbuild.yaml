@@ -7,3 +7,25 @@ steps:
   - id: "Running docker ps"
     name: 'docker'
     args: ['ps']
+
+  - id: "Running composer"
+    name: 'docker'
+    args: ['exec', '-t', 'app', 'composer', 'install']
+
+  - id: "Copying .env"
+    name: 'docker'
+    args: ['exec', '-t', 'app', 'cp', '.env.example', '.env']
+
+  - id: "Running key:generete"
+    name: 'docker'
+    args: ['exec', '-t', 'app', 'php', '/var/www/artisan', 'key:generate']
+
+  - id: "Running migrations"
+    name: 'docker'
+    args: ['exec', '-t', 'app', 'php', '/var/www/artisan', 'migrate']
+
+  - id: "Running unit tests"
+    name: 'docker'
+    args: ['exec', '-t', 'app', 'php', '/vendor/bin/phpunit', '-c', '/var/www/phpunit.xml']
+
+
