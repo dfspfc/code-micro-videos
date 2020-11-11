@@ -2,12 +2,16 @@
 
 namespace Tests\Feature\Http\Controllers;
 
+use App\Http\Controllers\Api\VideoController;
 use App\Models\Category;
 use App\Models\Traits\Uuid;
 use App\Models\Video;
 use App\Models\Gender;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
+use Mockery;
+use Illuminate\Http\Request;
+use Tests\Exceptions\TestTransactionException;
 
 class VideoTest extends TestCase
 {
@@ -389,5 +393,47 @@ class VideoTest extends TestCase
             ->get()
             ->first();
         $this->assertNotNull($deletedVideo->deleted_at);
+    }
+
+    public function testMakeRollbackWhenCreationFailsIntheMiddleOfTheTransaction()
+    {
+        $categoryMock = Mockery::mock(Category::class);
+        $categoryMock->shouldReceive('sync')
+            ->once()
+            ->andThrow(new TestTransactionException());
+
+        $videoModelMock = Mockery::mock(Video::class);
+        $videoModelMock->shouldReceive('categories')
+            ->once()
+            ->andReturn($categoryMock);
+        $videoModelMock->shouldReceive('create')
+            ->once()
+            ->andReturn($videoModelMock);
+
+        $controller = Mockery::mock(VideoController::class)
+            ->makePartial()
+            ->shouldAllowMockingProtectedMethods();
+        $controller
+            ->shouldReceive('validate')
+            ->withAnyArgs()
+            ->AndReturnTrue();
+        $controller
+            ->shouldReceive('storeRules')
+            ->withAnyArgs()
+            ->AndReturn([]);
+        $controller
+            ->shouldReceive('model')
+            ->andReturn($videoModelMock);
+
+        $request = Mockery::mock(Request::class);
+        $request
+            ->shouldReceive('get')
+            ->andReturn('');
+
+        try {
+            $controller->store($request);
+        } catch (TestTransactionException $e) {
+            $this->assertCount(0, Video::all());
+        }
     }
 }
