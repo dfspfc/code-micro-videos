@@ -231,11 +231,13 @@ class GenderTest extends TestCase
 
     public function testUpdateShouldUpdateAndReturn200()
     {
+        $formerRelatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $gender = factory(Gender::class)->create([
             'name' => 'name to be updated',
             'is_active' => false
         ]);
-        $updatedRelatedCategory = factory(Category::class)->create(['name' => 'related category']);
+        $gender->categories()->sync($formerRelatedCategory->id);
+        $updatedRelatedCategory = factory(Category::class)->create(['name' => 'updated related category']);
         $updateRequestBody = [
             'name' => 'new name',
             'is_active' => true,
@@ -256,11 +258,18 @@ class GenderTest extends TestCase
                 'name' => $updateRequestBody['name'],
                 'is_active' => $updateRequestBody['is_active'],
             ]);
+        $this->assertDatabaseMissing(
+            'category_gender',
+            [
+                'category_id' => $formerRelatedCategory->id,
+                'gender_id' => $gender->id,
+            ]
+        );
         $this->assertDatabaseHas(
             'category_gender',
             [
                 'category_id' => $updatedRelatedCategory->id,
-                'gender_id' => $response->json()['id'],
+                'gender_id' => $gender->id,
             ]
         );
     }
@@ -320,11 +329,14 @@ class GenderTest extends TestCase
             ->shouldReceive('get')
             ->andReturn('');
 
+        $hasError = false;
         try {
+            $hasError = true;
             $controller->store($request);
         } catch (TestTransactionException $e) {
             $this->assertCount(0, Gender::all());
         }
+        $this->assertTrue($hasError);
     }
 
     public function testMakeRollbackWhenUpdateFailsIntheMiddleOfTheTransaction()
@@ -368,7 +380,9 @@ class GenderTest extends TestCase
             ->shouldReceive('get')
             ->andReturn('');
 
+        $hasError = false;
         try {
+            $hasError = true;
             $controller->update($request, $genderOnDB->id);
         } catch (TestTransactionException $e) {
             $updatedGenderOnDB = Gender::where('id', $genderOnDB->id)
@@ -381,5 +395,6 @@ class GenderTest extends TestCase
                 $updatedGenderOnDB
             );
         }
+        $this->assertTrue($hasError);
     }
 }

@@ -345,6 +345,8 @@ class VideoTest extends TestCase
 
     public function testUpdateShouldUpdateAndReturn200()
     {
+        $formerRelatedCategory = factory(Category::class)->create(['name' => 'related category']);
+        $formerRelatedGender = factory(Gender::class)->create(['name' => 'related gender']);
         $video = factory(Video::class)->create([
             'title' => 'title test to be updated',
             'description' => 'description test to be updated',
@@ -353,6 +355,8 @@ class VideoTest extends TestCase
             'rating' => 'L',
             'duration' => 20,
         ]);
+        $video->categories()->sync($formerRelatedCategory->id);
+        $video->genders()->sync($formerRelatedGender->id);
 
         $updatedRelatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $updatedRelatedGender = factory(Gender::class)->create(['name' => 'related gender']);
@@ -385,6 +389,20 @@ class VideoTest extends TestCase
                 'rating' => $updateRequestBody['rating'],
                 'duration' => $updateRequestBody['duration']
             ]);
+        $this->assertDatabaseMissing(
+            'category_video',
+            [
+                'category_id' => $formerRelatedCategory->id,
+                'video_id' => $video->id,
+            ]
+        );
+        $this->assertDatabaseMissing(
+            'gender_video',
+            [
+                'gender_id' => $formerRelatedGender->id,
+                'video_id' => $video->id,
+            ]
+        );
         $this->assertDatabaseHas(
             'category_video',
             [
@@ -456,11 +474,14 @@ class VideoTest extends TestCase
             ->shouldReceive('get')
             ->andReturn('');
 
+        $hasError = false;
         try {
+            $hasError = true;
             $controller->store($request);
         } catch (TestTransactionException $e) {
             $this->assertCount(0, Video::all());
         }
+        $this->assertTrue($hasError);
     }
 
     public function testMakeRollbackWhenUpdateFailsIntheMiddleOfTheTransaction()
@@ -508,7 +529,9 @@ class VideoTest extends TestCase
             ->shouldReceive('get')
             ->andReturn('');
 
+        $hasError = false;
         try {
+            $hasError = true;
             $controller->update($request, $videoOnDB->id);
         } catch (TestTransactionException $e) {
             $updatedVideoOnDB = Video::where('id', $videoOnDB->id)
@@ -521,5 +544,6 @@ class VideoTest extends TestCase
                 $updatedVideoOnDB
             );
         }
+        $this->assertTrue($hasError);
     }
 }
