@@ -19,8 +19,8 @@ class VideoController extends BaseApiController
             'opened' => 'boolean',
             'rating' => 'required|in:' . implode(',', Video::RATING_LIST),
             'duration' => 'required|integer',
-            'categories_id' => 'required|array|exists:categories,id',
-            'genders_id' => 'required|array|exists:genders,id',
+            'categories_id' => 'required|array|exists:categories,id,deleted_at,NULL',
+            'genders_id' => 'required|array|exists:genders,id,deleted_at,NULL',
         ];
     }
 

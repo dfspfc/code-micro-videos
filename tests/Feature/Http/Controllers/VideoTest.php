@@ -326,13 +326,25 @@ class VideoTest extends TestCase
                 'opened' => $requestBody['opened'],
                 'rating' => $requestBody['rating'],
                 'duration' => $requestBody['duration']
-            ]);
+            ]);    
+        $this->assertDatabaseHas(
+            'category_video',
+            [
+                'category_id' => $relatedCategory->id,
+                'video_id' => $response->json()['id'],
+            ]
+        );
+        $this->assertDatabaseHas(
+            'gender_video',
+            [
+                'gender_id' => $relatedGender->id,
+                'video_id' => $response->json()['id'],
+            ]
+        );
     }
 
     public function testUpdateShouldUpdateAndReturn200()
     {
-        $relatedCategory = factory(Category::class)->create(['name' => 'related category']);
-        $relatedGender = factory(Gender::class)->create(['name' => 'related gender']);
         $video = factory(Video::class)->create([
             'title' => 'title test to be updated',
             'description' => 'description test to be updated',
@@ -373,6 +385,20 @@ class VideoTest extends TestCase
                 'rating' => $updateRequestBody['rating'],
                 'duration' => $updateRequestBody['duration']
             ]);
+        $this->assertDatabaseHas(
+            'category_video',
+            [
+                'category_id' => $updatedRelatedCategory->id,
+                'video_id' => $response->json()['id'],
+            ]
+        );
+        $this->assertDatabaseHas(
+            'gender_video',
+            [
+                'gender_id' => $updatedRelatedGender->id,
+                'video_id' => $response->json()['id'],
+            ]
+        );
     }
 
     public function testDeleteShouldSoftDeleteVideoAndReturn204()
@@ -434,6 +460,66 @@ class VideoTest extends TestCase
             $controller->store($request);
         } catch (TestTransactionException $e) {
             $this->assertCount(0, Video::all());
+        }
+    }
+
+    public function testMakeRollbackWhenUpdateFailsIntheMiddleOfTheTransaction()
+    {
+        $videoOnDB = factory(Video::class)->create([
+                'title' => 'title test to be updated',
+                'description' => 'description test to be updated',
+                'year_launched' => 2008,
+                'opened' => true,
+                'rating' => 'L',
+                'duration' => 20,
+        ]);
+
+        $categoryMock = Mockery::mock(Category::class);
+        $categoryMock->shouldReceive('sync')
+            ->once()
+            ->andThrow(new TestTransactionException());
+
+        $videoModelMock = Mockery::mock(Video::class);
+        $videoModelMock->shouldReceive('categories')
+            ->once()
+            ->andReturn($categoryMock);
+        $videoModelMock->shouldReceive('update')
+            ->once()
+            ->andReturn($videoModelMock);
+
+        $controller = Mockery::mock(VideoController::class)
+            ->makePartial()
+            ->shouldAllowMockingProtectedMethods();
+        $controller
+            ->shouldReceive('validate')
+            ->withAnyArgs()
+            ->AndReturn([]);
+            $controller
+            ->shouldReceive('findObjectFromModel')
+            ->withAnyArgs()
+            ->AndReturn($videoModelMock);
+        $controller
+            ->shouldReceive('updateRules')
+            ->withAnyArgs()
+            ->AndReturn([]);
+
+        $request = Mockery::mock(Request::class);
+        $request
+            ->shouldReceive('get')
+            ->andReturn('');
+
+        try {
+            $controller->update($request, $videoOnDB->id);
+        } catch (TestTransactionException $e) {
+            $updatedVideoOnDB = Video::where('id', $videoOnDB->id)
+                ->get()
+                ->first()
+                ->refresh()
+                ->toArray();
+            $this->assertEquals(
+                $videoOnDB->refresh()->toArray(),
+                $updatedVideoOnDB
+            );
         }
     }
 }
