@@ -20,7 +20,6 @@ abstract class BaseApiController extends Controller
     {
         return $this->findObjectFromModel($id);
     }
-    
     public function store(Request $request)
     {
         $validatedData = $this->validate($request, $this->storeRules());
@@ -32,12 +31,12 @@ abstract class BaseApiController extends Controller
 
     public function update(Request $request, $id)
     {
-        $obj = $this->findObjectFromModel($id);
+
         $validatedData = $this->validate($request, $this->updateRules());
+        $obj = $this->findObjectFromModel($id);
         $obj->update($validatedData);
         
         return $obj;
-
     }
 
     public function destroy($id)

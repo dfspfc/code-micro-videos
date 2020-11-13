@@ -16,4 +16,9 @@ trait Uuid
     public static function isValid($uuid)  {
         return RamseyUuid::isValid($uuid);
     }
+
+    public static function newVersion4()
+    {
+        return RamseyUuid::uuid4()->toString();
+    }
 }

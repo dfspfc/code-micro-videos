@@ -14,7 +14,12 @@ class Gender extends Model
     protected $dates = ['deleted_at'];
     protected $casts = [
         'id' => 'string',
-        'is_active' => 'bool',
+        'is_active' => 'boolean',
     ];
     public $incrementing = false;
+
+    public function categories()
+    {
+        return $this->belongsToMany(Category::class);
+    }
 }
