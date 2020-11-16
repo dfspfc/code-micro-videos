@@ -12,6 +12,8 @@ use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Mockery;
 use Illuminate\Http\Request;
 use Tests\Exceptions\TestTransactionException;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 
 class VideoTest extends TestCase
 {
@@ -297,8 +299,79 @@ class VideoTest extends TestCase
         $this->assertNotInDatabase($response, 'genders_id');
     }
 
+    public function testCreatePassingFileAttributesLargerThanWhatIsAllowedShouldReturn422()
+    {
+        Storage::fake();
+        $file = UploadedFile::fake()->create('video.mp4')->size('600000');
+
+        $response = $this->json(
+            'POST',
+            route('videos.store'),
+            ['video_file' => $file]
+        );
+
+        $response->assertStatus(422);
+        $this->assertMaxFileSize($response, 'video_file', 500000);
+    }
+
+    public function testCreatePassingFileTypesDifferentFromWhatIsAllowedShouldReturn422()
+    {
+        Storage::fake();
+        $file = UploadedFile::fake()->create('video.mp3')->size('500000');
+
+        $response = $this->json(
+            'POST',
+            route('videos.store'),
+            ['video_file' => $file]
+        );
+
+        $response->assertStatus(422);
+        $this->assertFileType($response, 'video_file', 'mp4');
+    }
+
+    public function testUpdatePassingFileAttributesLargerThanWhatIsAllowedShouldReturn422()
+    {
+        Storage::fake();
+        $file = UploadedFile::fake()->create('video.mp4')->size('600000');
+
+        $video = factory(Video::class)->create();
+        $response = $this->json(
+            'PUT',
+            route(
+                'videos.update',
+                ['video' => $video->id],
+            ),
+            ['video_file' => $file]
+        );
+
+        $response->assertStatus(422);
+        $this->assertMaxFileSize($response, 'video_file', 500000);
+    }
+
+    public function testUpdatePassingFileTypesDifferentFromWhatIsAllowedShouldReturn422()
+    {
+        Storage::fake();
+        $file = UploadedFile::fake()->create('video.jpeg')->size('500000');
+
+        $video = factory(Video::class)->create();
+        $response = $this->json(
+            'PUT',
+            route(
+                'videos.update',
+                ['video' => $video->id],
+            ),
+            ['video_file' => $file]
+        );
+
+        $response->assertStatus(422);
+        $this->assertFileType($response, 'video_file', 'mp4');
+    }
+
     public function testCreatePassingAllFieldsShouldCreateAndReturn201()
     {
+        Storage::fake();
+        $file = UploadedFile::fake()->create('video.mp4')->size('500000');
+
         $relatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $relatedGender = factory(Gender::class)->create(['name' => 'related gender']);
         $requestBody = [
@@ -310,6 +383,7 @@ class VideoTest extends TestCase
             'duration' => 20,
             'categories_id' => [$relatedCategory->id],
             'genders_id' => [$relatedGender->id],
+            'video_file' => $file,
         ];
         $response = $this->json(
             'POST',
@@ -325,7 +399,8 @@ class VideoTest extends TestCase
                 'year_launched' => $requestBody['year_launched'],
                 'opened' => $requestBody['opened'],
                 'rating' => $requestBody['rating'],
-                'duration' => $requestBody['duration']
+                'duration' => $requestBody['duration'],
+                'video_file' => $file->hashName(),
             ]);    
         $this->assertDatabaseHas(
             'category_video',
@@ -341,10 +416,23 @@ class VideoTest extends TestCase
                 'video_id' => $response->json()['id'],
             ]
         );
+   
+        $this->assertDatabaseHas(
+            'videos',
+            [
+                'video_file' => $file->hashName(),
+            ]
+        );
+        Storage::assertExists(
+            "{$response->json()['id']}/{$file->hashName()}"
+        );
     }
 
     public function testUpdateShouldUpdateAndReturn200()
     {
+        Storage::fake();
+
+        $formerRelatedFile = UploadedFile::fake()->create('former_video.mp4')->size('500000');
         $formerRelatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $formerRelatedGender = factory(Gender::class)->create(['name' => 'related gender']);
         $video = factory(Video::class)->create([
@@ -354,12 +442,14 @@ class VideoTest extends TestCase
             'opened' => true,
             'rating' => 'L',
             'duration' => 20,
+            'video_file' => $formerRelatedFile,
         ]);
         $video->categories()->sync($formerRelatedCategory->id);
         $video->genders()->sync($formerRelatedGender->id);
 
         $updatedRelatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $updatedRelatedGender = factory(Gender::class)->create(['name' => 'related gender']);
+        $updatedFile = UploadedFile::fake()->create('video.mp4')->size('500000');
         $updateRequestBody = [
             'title' => 'updated title test',
             'description' => 'updated description test',
@@ -369,6 +459,7 @@ class VideoTest extends TestCase
             'duration' => 29,
             'categories_id' => [$updatedRelatedCategory->id],
             'genders_id' => [$updatedRelatedGender->id],
+            'video_file' => $updatedFile
         ];
         $response = $this->json(
             'PUT',
@@ -387,7 +478,8 @@ class VideoTest extends TestCase
                 'year_launched' => $updateRequestBody['year_launched'],
                 'opened' => $updateRequestBody['opened'],
                 'rating' => $updateRequestBody['rating'],
-                'duration' => $updateRequestBody['duration']
+                'duration' => $updateRequestBody['duration'],
+                'video_file' => $updatedFile->hashName(),
             ]);
         $this->assertDatabaseMissing(
             'category_video',
@@ -417,6 +509,25 @@ class VideoTest extends TestCase
                 'video_id' => $response->json()['id'],
             ]
         );
+
+        $this->assertDatabaseMissing(
+            'videos',
+            [
+                'video_file' => $formerRelatedFile->hashName(),
+            ]
+        );
+        $this->assertDatabaseHas(
+            'videos',
+            [
+                'video_file' => $updatedFile->hashName(),
+            ]
+        );
+        Storage::assertMissing(
+            "{$response->json()['id']}/{$formerRelatedFile->hashName()}"
+        );
+        Storage::assertExists(
+            "{$response->json()['id']}/{$updatedFile->hashName()}"
+        );
     }
 
     public function testDeleteShouldSoftDeleteVideoAndReturn204()
@@ -437,113 +548,5 @@ class VideoTest extends TestCase
             ->get()
             ->first();
         $this->assertNotNull($deletedVideo->deleted_at);
-    }
-
-    public function testMakeRollbackWhenCreationFailsIntheMiddleOfTheTransaction()
-    {
-        $categoryMock = Mockery::mock(Category::class);
-        $categoryMock->shouldReceive('sync')
-            ->once()
-            ->andThrow(new TestTransactionException());
-
-        $videoModelMock = Mockery::mock(Video::class);
-        $videoModelMock->shouldReceive('categories')
-            ->once()
-            ->andReturn($categoryMock);
-        $videoModelMock->shouldReceive('create')
-            ->once()
-            ->andReturn($videoModelMock);
-
-        $controller = Mockery::mock(VideoController::class)
-            ->makePartial()
-            ->shouldAllowMockingProtectedMethods();
-        $controller
-            ->shouldReceive('validate')
-            ->withAnyArgs()
-            ->AndReturnTrue();
-        $controller
-            ->shouldReceive('storeRules')
-            ->withAnyArgs()
-            ->AndReturn([]);
-        $controller
-            ->shouldReceive('model')
-            ->andReturn($videoModelMock);
-
-        $request = Mockery::mock(Request::class);
-        $request
-            ->shouldReceive('get')
-            ->andReturn('');
-
-        $hasError = false;
-        try {
-            $hasError = true;
-            $controller->store($request);
-        } catch (TestTransactionException $e) {
-            $this->assertCount(0, Video::all());
-        }
-        $this->assertTrue($hasError);
-    }
-
-    public function testMakeRollbackWhenUpdateFailsIntheMiddleOfTheTransaction()
-    {
-        $videoOnDB = factory(Video::class)->create([
-                'title' => 'title test to be updated',
-                'description' => 'description test to be updated',
-                'year_launched' => 2008,
-                'opened' => true,
-                'rating' => 'L',
-                'duration' => 20,
-        ]);
-
-        $categoryMock = Mockery::mock(Category::class);
-        $categoryMock->shouldReceive('sync')
-            ->once()
-            ->andThrow(new TestTransactionException());
-
-        $videoModelMock = Mockery::mock(Video::class);
-        $videoModelMock->shouldReceive('categories')
-            ->once()
-            ->andReturn($categoryMock);
-        $videoModelMock->shouldReceive('update')
-            ->once()
-            ->andReturn($videoModelMock);
-
-        $controller = Mockery::mock(VideoController::class)
-            ->makePartial()
-            ->shouldAllowMockingProtectedMethods();
-        $controller
-            ->shouldReceive('validate')
-            ->withAnyArgs()
-            ->AndReturn([]);
-            $controller
-            ->shouldReceive('findObjectFromModel')
-            ->withAnyArgs()
-            ->AndReturn($videoModelMock);
-        $controller
-            ->shouldReceive('updateRules')
-            ->withAnyArgs()
-            ->AndReturn([]);
-
-        $request = Mockery::mock(Request::class);
-        $request
-            ->shouldReceive('get')
-            ->andReturn('');
-
-        $hasError = false;
-        try {
-            $hasError = true;
-            $controller->update($request, $videoOnDB->id);
-        } catch (TestTransactionException $e) {
-            $updatedVideoOnDB = Video::where('id', $videoOnDB->id)
-                ->get()
-                ->first()
-                ->refresh()
-                ->toArray();
-            $this->assertEquals(
-                $videoOnDB->refresh()->toArray(),
-                $updatedVideoOnDB
-            );
-        }
-        $this->assertTrue($hasError);
     }
 }

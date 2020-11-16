@@ -21,19 +21,14 @@ class VideoController extends BaseApiController
             'duration' => 'required|integer',
             'categories_id' => 'required|array|exists:categories,id,deleted_at,NULL',
             'genders_id' => 'required|array|exists:genders,id,deleted_at,NULL',
+            'video_file' => 'nullable|mimes:mp4|max:500000',
         ];
     }
 
     public function store(Request $request)
     {
         $validatedData = $this->validate($request, $this->storeRules());
-
-        $video = DB::transaction(function () use ($request, $validatedData) {
-            $video = $this->model()::create($validatedData);
-            $video->categories()->sync($request->get('categories_id'));
-            $video->genders()->sync($request->get('genders_id'));
-            return $video;   
-        });
+        $video = $this->model()::create($validatedData);
         $video->refresh();
         
         return $video;
@@ -43,13 +38,9 @@ class VideoController extends BaseApiController
     {
         $validatedData = $this->validate($request, $this->updateRules());
         $video = $this->findObjectFromModel($id);
-
-        return DB::transaction(function () use ($request, $validatedData, $video) {
-            $video->update($validatedData);
-            $video->categories()->sync($request->get('categories_id'));
-            $video->genders()->sync($request->get('genders_id'));
-            return $video;
-        });
+        $video->update($validatedData);
+        
+        return $video;
     }
 
     protected function model()

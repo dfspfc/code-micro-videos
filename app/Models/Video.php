@@ -5,10 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use App\Models\Traits\Uuid;
+use App\Models\Traits\UploadFiles;
+use Illuminate\Support\Facades\DB;
 
 class Video extends Model
 {
-    use SoftDeletes, Uuid;
+    use SoftDeletes, Uuid, UploadFiles;
 
     const RATING_LIST = ['L', '10', '12', '14', '16', '18'];
 
@@ -19,6 +21,7 @@ class Video extends Model
         'opened',
         'rating', 
         'duration',
+        'video_file',
     ];
     protected $dates = ['deleted_at'];
     protected $casts = [
@@ -28,15 +31,73 @@ class Video extends Model
         'duration' => 'integer',
     ];
     public $incrementing = false;
+    public static $fileFields = [
+        'video_file',
+    ];
+
+    public static function create(array $attributes = [])
+    {
+        $files = self::extractFiles($attributes);
+        try {
+            DB::beginTransaction();
+            $video = static::query()->create($attributes);
+            static::handleRelations($video, $attributes);
+            $video->UploadFiles($files);
+            // upload
+            DB::commit();
+            return $video;
+        } catch (\Exception $e) {
+            if (isset($video)) {
+                // excluir
+            }
+            DB::rollBack();
+            throw $e;
+        }
+    }
+
+    public function update(array $attributes = [], array $options = [])
+    {
+        $files = self::extractFiles($attributes);
+        try {
+            DB::beginTransaction();
+            $saved = parent::update($attributes, $options);
+            static::handleRelations($this, $attributes);
+            $this->UploadFiles($files);
+            if($saved) {
+                // upload
+                // remover antigas
+            }
+            DB::commit();
+            return $saved;
+        } catch (\Exception $e) {
+            DB::rollBack();
+            throw $e;
+        }
+    }
 
     public function categories()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsToMany(Category::class)->withTrashed();
     }
 
     public function genders()
     {
-        return $this->belongsToMany(Gender::class);
+        return $this->belongsToMany(Gender::class)->withTrashed();
+    }
+
+    private static function handleRelations(Video $video, array $attributes)
+    {
+        if (isset($attributes['categories_id'])) {
+            $video->categories()->sync($attributes['categories_id']);
+        }
+        if (isset($attributes['genders_id'])) {
+            $video->genders()->sync($attributes['genders_id']);
+        }
+    }
+
+    protected function uploadDir()
+    {
+        return $this->id;
     }
 }
 

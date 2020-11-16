@@ -8,6 +8,7 @@ use App\Models\Gender;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use PHPUnit\Framework\TestCase;
 use App\Models\Traits\Uuid;
+use Illuminate\Database\QueryException;
 
 class VideoTest extends TestCase
 {

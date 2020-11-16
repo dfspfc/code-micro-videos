@@ -43,6 +43,16 @@ trait JsonFragmentValidation
         $this->assertInvalidJsonFragment($response, $attribute, 'in');
     }
 
+    protected function assertMaxFileSize(TestResponse $response, $attribute, $maxFileSize)
+    {
+        $this->assertInvalidJsonFragment($response, $attribute, 'max.file', ['max' => $maxFileSize]);
+    }
+
+    protected function assertFileType(TestResponse $response, $attribute, $fileType)
+    {
+        $this->assertInvalidJsonFragment($response, $attribute, 'mimes', ['values' => $fileType]);
+    }
+
     protected function assertInvalidJsonFragment(
         TestResponse $response,
         $attribute,
