@@ -3,12 +3,10 @@
 namespace Tests\Unit\Models;
 
 use App\Models\Video;
-use App\Models\Category;
-use App\Models\Gender;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use PHPUnit\Framework\TestCase;
 use App\Models\Traits\Uuid;
-use Illuminate\Database\QueryException;
+use App\Models\Traits\UploadFiles;
 
 class VideoTest extends TestCase
 {
@@ -28,6 +26,7 @@ class VideoTest extends TestCase
             'opened',
             'rating', 
             'duration',
+            'video_file',
         ];
         $this->assertEquals($expected, $this->video->getFillable());
     }
@@ -60,6 +59,7 @@ class VideoTest extends TestCase
         $expected = [
             SoftDeletes::class,
             Uuid::class,
+            UploadFiles::class,
         ];
 
         $traitsInVideo = array_keys(class_uses(video::class));
