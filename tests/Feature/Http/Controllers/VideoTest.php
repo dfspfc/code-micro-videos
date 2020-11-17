@@ -2,22 +2,16 @@
 
 namespace Tests\Feature\Http\Controllers;
 
-use App\Http\Controllers\Api\VideoController;
 use App\Models\Category;
 use App\Models\Traits\Uuid;
 use App\Models\Video;
 use App\Models\Gender;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
-use Mockery;
-use Illuminate\Http\Request;
-use Tests\Exceptions\TestTransactionException;
-use Illuminate\Http\UploadedFile;
-use Illuminate\Support\Facades\Storage;
 
 class VideoTest extends TestCase
 {
-    use DatabaseMigrations, JsonFragmentValidation;
+    use DatabaseMigrations, JsonFragmentValidation, VideoBase;
 
     public function testListShouldReturn200()
     {
@@ -55,11 +49,9 @@ class VideoTest extends TestCase
     
     public function testCreatePassingAttributesLargerThan255CharactersShouldReturn422()
     {
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            ['title' => str_repeat('a', 256)]
-        );
+        $response = $this->postVideo([
+            'title' => str_repeat('a', 256)
+        ]);
 
         $response->assertStatus(422);
         $this->assertMax255($response, 'title');
@@ -67,13 +59,9 @@ class VideoTest extends TestCase
 
     public function testCreatePassingAttributesDifferentFromBooleanShouldReturn422()
     {
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            [
-                'opened' => 'a',
-            ]
-        );
+        $response = $this->postVideo([
+            'opened' => 'a',
+        ]);
 
         $response->assertStatus(422);
         $this->assertBoolean($response, 'opened');
@@ -81,13 +69,9 @@ class VideoTest extends TestCase
 
     public function testCreatePassingAttributesDifferentFromIntegerShouldReturn422()
     {
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            [
-                'duration' => 'not an integer',
-            ]
-        );
+        $response = $this->postVideo([
+            'duration' => 'not an integer',
+        ]);
 
         $response->assertStatus(422);
         $this->assertInteger($response, 'duration');
@@ -95,13 +79,9 @@ class VideoTest extends TestCase
 
     public function testCreatePassingAttributesDifferentFromWhatIsAllowedShouldReturn422()
     {
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            [
-                'rating' => 'invalid',
-            ]
-        );
+        $response = $this->postVideo([
+            'rating' => 'invalid',
+        ]);
 
         $response->assertStatus(422);
         $this->assertNotIn($response, 'rating');
@@ -109,11 +89,9 @@ class VideoTest extends TestCase
 
     public function testCreatePassingAttributesWithInvalidYearShouldReturn422()
     {
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            ['year_launched' => 'not a year']
-        );
+        $response = $this->postVideo([
+            'year_launched' => 'not a year',
+        ]);
 
         $response->assertStatus(422);
         $this->assertYear($response, 'year_launched');
@@ -121,14 +99,10 @@ class VideoTest extends TestCase
 
     public function testCreatePassingAttributesDifferentFromArrayShouldReturn422()
     {
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            [
-                'categories_id' => 'not an array',
-                'genders_id' => 'not an array'
-            ]
-        );
+        $response = $this->postVideo([
+            'categories_id' => 'not an array',
+            'genders_id' => 'not an array',
+        ]);
 
         $response->assertStatus(422);
         $this->assertArray($response, 'categories_id');
@@ -137,14 +111,10 @@ class VideoTest extends TestCase
 
     public function testCreatePassingAttributesRelatedOnDatabaseButThatDoNotExistsThereShouldReturn422()
     {
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            [
-                'categories_id' => [Uuid::newVersion4()],
-                'genders_id' => [Uuid::newVersion4()],
-            ]
-        );
+        $response = $this->postVideo([
+            'categories_id' => [Uuid::newVersion4()],
+            'genders_id' => [Uuid::newVersion4()],
+        ]);
 
         $response->assertStatus(422);
         $this->assertNotInDatabase($response, 'categories_id');
@@ -154,14 +124,7 @@ class VideoTest extends TestCase
     public function testUpdateNotPassingAnyAttributeShouldReturn422()
     {
         $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
-            []
-        );
+        $response = $this->updateVideo($video->id, []);
         
         $response->assertStatus(422);
         $this->assertRequired($response, 'title');
@@ -176,13 +139,11 @@ class VideoTest extends TestCase
     public function testUpdatePassingAttributesLargeThan255CharactersShouldReturn422()
     {
         $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
-            ['title' => str_repeat('a', 256)]
+        $response = $this->updateVideo(
+            $video->id, 
+            [
+                'title' => str_repeat('a', 256),
+            ]
         );
 
         $response->assertStatus(422);
@@ -192,12 +153,8 @@ class VideoTest extends TestCase
     public function testUpdatePassingAttributesDifferentFromBooleanShouldReturn422()
     {
         $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
+        $response = $this->updateVideo(
+            $video->id, 
             [
                 'opened' => 'a',
             ]
@@ -210,12 +167,8 @@ class VideoTest extends TestCase
     public function testUpdatePassingAttributesDifferentFromIntegerShouldReturn422()
     {
         $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
+        $response = $this->updateVideo(
+            $video->id, 
             [
                 'duration' => 'not an integer',
             ]
@@ -228,12 +181,8 @@ class VideoTest extends TestCase
     public function testUpdatePassingAttributesDifferentFromWhatIsAllowedShouldReturn422()
     {
         $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
+        $response = $this->updateVideo(
+            $video->id, 
             [
                 'rating' => 'invalid',
             ]
@@ -246,13 +195,11 @@ class VideoTest extends TestCase
     public function testUpdatePassingAttributesWithInvalidYearShouldReturn422()
     {
         $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
-            ['year_launched' => 'not a year']
+        $response = $this->updateVideo(
+            $video->id, 
+            [
+                'year_launched' => 'not a year',
+            ]
         );
 
         $response->assertStatus(422);
@@ -262,15 +209,11 @@ class VideoTest extends TestCase
     public function testUpdatePassingAttributesDifferentFromArrayShouldReturn422()
     {
         $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
+        $response = $this->updateVideo(
+            $video->id, 
             [
                 'categories_id' => 'not an array',
-                'genders_id' => 'not an array'
+                'genders_id' => 'not an array',
             ]
         );
 
@@ -282,12 +225,8 @@ class VideoTest extends TestCase
     public function testUpdatePassingAttributesRelatedOnDatabaseButThatDoNotExistsThereShouldReturn422()
     {
         $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
+        $response = $this->updateVideo(
+            $video->id, 
             [
                 'categories_id' => [Uuid::newVersion4()],
                 'genders_id' => [Uuid::newVersion4()]
@@ -299,79 +238,8 @@ class VideoTest extends TestCase
         $this->assertNotInDatabase($response, 'genders_id');
     }
 
-    public function testCreatePassingFileAttributesLargerThanWhatIsAllowedShouldReturn422()
-    {
-        Storage::fake();
-        $file = UploadedFile::fake()->create('video.mp4')->size('600000');
-
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            ['video_file' => $file]
-        );
-
-        $response->assertStatus(422);
-        $this->assertMaxFileSize($response, 'video_file', 500000);
-    }
-
-    public function testCreatePassingFileTypesDifferentFromWhatIsAllowedShouldReturn422()
-    {
-        Storage::fake();
-        $file = UploadedFile::fake()->create('video.mp3')->size('500000');
-
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            ['video_file' => $file]
-        );
-
-        $response->assertStatus(422);
-        $this->assertFileType($response, 'video_file', 'mp4');
-    }
-
-    public function testUpdatePassingFileAttributesLargerThanWhatIsAllowedShouldReturn422()
-    {
-        Storage::fake();
-        $file = UploadedFile::fake()->create('video.mp4')->size('600000');
-
-        $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
-            ['video_file' => $file]
-        );
-
-        $response->assertStatus(422);
-        $this->assertMaxFileSize($response, 'video_file', 500000);
-    }
-
-    public function testUpdatePassingFileTypesDifferentFromWhatIsAllowedShouldReturn422()
-    {
-        Storage::fake();
-        $file = UploadedFile::fake()->create('video.jpeg')->size('500000');
-
-        $video = factory(Video::class)->create();
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
-            ['video_file' => $file]
-        );
-
-        $response->assertStatus(422);
-        $this->assertFileType($response, 'video_file', 'mp4');
-    }
-
     public function testCreatePassingAllFieldsShouldCreateAndReturn201()
     {
-        Storage::fake();
-        $file = UploadedFile::fake()->create('video.mp4')->size('500000');
-
         $relatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $relatedGender = factory(Gender::class)->create(['name' => 'related gender']);
         $requestBody = [
@@ -383,13 +251,8 @@ class VideoTest extends TestCase
             'duration' => 20,
             'categories_id' => [$relatedCategory->id],
             'genders_id' => [$relatedGender->id],
-            'video_file' => $file,
         ];
-        $response = $this->json(
-            'POST',
-            route('videos.store'),
-            $requestBody
-        );
+        $response = $this->postVideo($requestBody);
         
         $response
             ->assertStatus(201)
@@ -400,7 +263,6 @@ class VideoTest extends TestCase
                 'opened' => $requestBody['opened'],
                 'rating' => $requestBody['rating'],
                 'duration' => $requestBody['duration'],
-                'video_file' => $file->hashName(),
             ]);    
         $this->assertDatabaseHas(
             'category_video',
@@ -416,23 +278,10 @@ class VideoTest extends TestCase
                 'video_id' => $response->json()['id'],
             ]
         );
-   
-        $this->assertDatabaseHas(
-            'videos',
-            [
-                'video_file' => $file->hashName(),
-            ]
-        );
-        Storage::assertExists(
-            "{$response->json()['id']}/{$file->hashName()}"
-        );
     }
 
     public function testUpdateShouldUpdateAndReturn200()
     {
-        Storage::fake();
-
-        $formerRelatedFile = UploadedFile::fake()->create('former_video.mp4')->size('500000');
         $formerRelatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $formerRelatedGender = factory(Gender::class)->create(['name' => 'related gender']);
         $video = factory(Video::class)->create([
@@ -442,14 +291,12 @@ class VideoTest extends TestCase
             'opened' => true,
             'rating' => 'L',
             'duration' => 20,
-            'video_file' => $formerRelatedFile,
         ]);
         $video->categories()->sync($formerRelatedCategory->id);
         $video->genders()->sync($formerRelatedGender->id);
 
         $updatedRelatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $updatedRelatedGender = factory(Gender::class)->create(['name' => 'related gender']);
-        $updatedFile = UploadedFile::fake()->create('video.mp4')->size('500000');
         $updateRequestBody = [
             'title' => 'updated title test',
             'description' => 'updated description test',
@@ -459,16 +306,8 @@ class VideoTest extends TestCase
             'duration' => 29,
             'categories_id' => [$updatedRelatedCategory->id],
             'genders_id' => [$updatedRelatedGender->id],
-            'video_file' => $updatedFile
         ];
-        $response = $this->json(
-            'PUT',
-            route(
-                'videos.update',
-                ['video' => $video->id],
-            ),
-            $updateRequestBody
-        );
+        $response = $this->updateVideo($video->id, $updateRequestBody);
         
         $response
             ->assertStatus(200)
@@ -479,7 +318,6 @@ class VideoTest extends TestCase
                 'opened' => $updateRequestBody['opened'],
                 'rating' => $updateRequestBody['rating'],
                 'duration' => $updateRequestBody['duration'],
-                'video_file' => $updatedFile->hashName(),
             ]);
         $this->assertDatabaseMissing(
             'category_video',
@@ -508,25 +346,6 @@ class VideoTest extends TestCase
                 'gender_id' => $updatedRelatedGender->id,
                 'video_id' => $response->json()['id'],
             ]
-        );
-
-        $this->assertDatabaseMissing(
-            'videos',
-            [
-                'video_file' => $formerRelatedFile->hashName(),
-            ]
-        );
-        $this->assertDatabaseHas(
-            'videos',
-            [
-                'video_file' => $updatedFile->hashName(),
-            ]
-        );
-        Storage::assertMissing(
-            "{$response->json()['id']}/{$formerRelatedFile->hashName()}"
-        );
-        Storage::assertExists(
-            "{$response->json()['id']}/{$updatedFile->hashName()}"
         );
     }
 

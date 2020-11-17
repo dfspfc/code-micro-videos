@@ -22,6 +22,7 @@ class Video extends Model
         'rating', 
         'duration',
         'video_file',
+        'thumb_file',
     ];
     protected $dates = ['deleted_at'];
     protected $casts = [
@@ -33,6 +34,7 @@ class Video extends Model
     public $incrementing = false;
     public static $fileFields = [
         'video_file',
+        'thumb_file',
     ];
 
     public static function create(array $attributes = [])
@@ -43,12 +45,11 @@ class Video extends Model
             $video = static::query()->create($attributes);
             static::handleRelations($video, $attributes);
             $video->UploadFiles($files);
-            // upload
             DB::commit();
             return $video;
         } catch (\Exception $e) {
             if (isset($video)) {
-                // excluir
+                $video->deleteFiles($files);
             }
             DB::rollBack();
             throw $e;
@@ -62,14 +63,20 @@ class Video extends Model
             DB::beginTransaction();
             $saved = parent::update($attributes, $options);
             static::handleRelations($this, $attributes);
-            $this->UploadFiles($files);
+            
             if($saved) {
-                // upload
-                // remover antigas
+                $this->UploadFiles($files);
             }
+
             DB::commit();
+
+            if($saved && count($files)) {
+                $this->deleteOldFiles();
+            }
+
             return $saved;
         } catch (\Exception $e) {
+            $this->deleteFiles($files);
             DB::rollBack();
             throw $e;
         }
