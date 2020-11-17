@@ -7,7 +7,6 @@ use App\Models\Gender;
 use App\Models\Category;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Tests\TestCase;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Tests\Exceptions\TestTransactionException;

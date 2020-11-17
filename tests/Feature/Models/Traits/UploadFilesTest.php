@@ -3,7 +3,7 @@
 namespace Tests\Feature\Models\Traits;
 
 use Tests\Stubs\Models\UploadFilesStub;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 
 class UploadFilesTest extends TestCase
 {

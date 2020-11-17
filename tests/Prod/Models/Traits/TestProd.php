@@ -2,8 +2,6 @@
 
 namespace Tests\Prod\Models\Traits;
 
-use Illuminate\Support\Facades\Storage;
-
 trait TestProd
 {
     protected function skipTestIfNotProd($message = '')

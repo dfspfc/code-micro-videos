@@ -3,7 +3,7 @@
 namespace Tests\Prod\Models\Traits;
 
 use Tests\Stubs\Models\UploadFilesStub;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Config;

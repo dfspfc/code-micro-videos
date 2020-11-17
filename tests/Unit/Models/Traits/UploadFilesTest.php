@@ -4,8 +4,7 @@ namespace Tests\Unit\Models;
 
 use App\Models\Traits\UploadFiles;
 use Tests\Stubs\Models\UploadFilesStub;
-use Illuminate\Database\Eloquent\SoftDeletes;
-use PHPUnit\Framework\TestCase;
+use Tests\TestCase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
