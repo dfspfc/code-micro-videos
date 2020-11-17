@@ -43,7 +43,7 @@ class VideoUploadsTest extends TestCase
 
         $response->assertStatus(422);
         $this->assertFileType($response, 'video_file', 'mp4');
-        $this->assertFileType($response, 'thumb_file', 'jpg');
+        $this->assertFileType($response, 'thumb_file', 'jpg, jpeg');
     }
 
     public function testUpdatePassingFileAttributesLargerThanWhatIsAllowedShouldReturn422()
@@ -83,7 +83,7 @@ class VideoUploadsTest extends TestCase
 
         $response->assertStatus(422);
         $this->assertFileType($response, 'video_file', 'mp4');
-        $this->assertFileType($response, 'thumb_file', 'jpg');
+        $this->assertFileType($response, 'thumb_file', 'jpg, jpeg');
     }
 
     public function testCreatePassingAllFileFieldsShouldCreateAndUploadAllFilesReturn201()
@@ -106,7 +106,7 @@ class VideoUploadsTest extends TestCase
             'thumb_file' => $thumb,
         ];
         $response = $this->postVideo($requestBody);
-  
+
         $response
             ->assertStatus(201)
             ->assertJsonFragment(['video_file' => $file->hashName()]);
@@ -126,7 +126,7 @@ class VideoUploadsTest extends TestCase
         Storage::fake();
 
         $formerRelatedFile = UploadedFile::fake()->create('former_video.mp4')->size('1000');
-        $formerRelatedThumb = UploadedFile::fake()->create('thumb.jpg')->size('1000');
+        $formerRelatedThumb = UploadedFile::fake()->image('thumb.jpg')->size('1000');
         $video = factory(Video::class)->create([
             'title' => 'title test to be updated',
             'description' => 'description test to be updated',

@@ -22,7 +22,7 @@ class VideoController extends BaseApiController
             'categories_id' => 'required|array|exists:categories,id,deleted_at,NULL',
             'genders_id' => 'required|array|exists:genders,id,deleted_at,NULL',
             'video_file' => 'nullable|mimes:mp4|max:500000',
-            'thumb_file' => 'image|mimes:jpg|max:500000',
+            'thumb_file' => 'image|mimes:jpg,jpeg|max:500000',
         ];
     }
 
