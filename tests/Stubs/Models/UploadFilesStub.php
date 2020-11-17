@@ -3,9 +3,8 @@
 namespace Tests\Stubs\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Schema\Blueprint;
 use App\Models\Traits\UploadFiles;
 
 class UploadFilesStub extends Model
@@ -27,7 +26,7 @@ class UploadFilesStub extends Model
 
     public static function makeTable()
     {
-        Schema::create('upload_file_stubs', function ($table) {
+        Schema::create('upload_file_stubs', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->string('name');
             $table->string('file1')->nullable();

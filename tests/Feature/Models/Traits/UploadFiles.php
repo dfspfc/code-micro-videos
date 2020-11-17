@@ -9,7 +9,7 @@ use PHPUnit\Framework\TestCase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
-class UploadFilesTest extends TestCase
+class UploadFiles extends TestCase
 {
     private $uploadFile;
 
