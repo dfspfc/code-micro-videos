@@ -29,6 +29,14 @@ steps:
     name: 'docker'
     args: ['ps']
 
+  - id: "Clear composer cache"
+    name: 'docker'
+    args: ['exec', '-t', 'micro-videos-app', 'composer', 'clearcache']
+
+  - id: "Deleting vendor"
+    name: 'docker'
+    args: ['exec', '-t', 'micro-videos-app', 'rm', '-rf', 'vendor']
+
   - id: "Running composer"
     name: 'docker'
     args: ['exec', '-t', 'micro-videos-app', 'composer', 'install']
