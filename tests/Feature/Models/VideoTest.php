@@ -57,23 +57,25 @@ class VideoTest extends TestCase
     {
         Storage::fake();
 
+        $category = factory(Category::class)->create(['name' => 'category']);
+        $gender = factory(Gender::class)->create(['name' => 'gender']);
         $formerRelatedFile = UploadedFile::fake()->create('former_video.mp4')->size('1000');
         $formerRelatedThumb = UploadedFile::fake()->image('thumb.jpg')->size('1000');
-        $videoOnDB = factory(Video::class)->create([
+        $videoOnDB = Video::create([
             'title' => 'title test to be updated',
             'description' => 'description test to be updated',
             'year_launched' => 2008,
             'opened' => true,
             'rating' => 'L',
             'duration' => 20,
+            'categories_id' => [$category->id],
+            'genders_id' => [$gender->id],
             'video_file' => $formerRelatedFile,
             'thumb_file' => $formerRelatedThumb,
         ]);
 
         $fileToUpdate = UploadedFile::fake()->create('former_video.mp4')->size('1000');
         $thumbToUpdate = UploadedFile::fake()->image('thumb.jpg')->size('1000');
-        $category = factory(Category::class)->create(['name' => 'category']);
-        $gender = factory(Gender::class)->create(['name' => 'gender']);
         Event::listen(TransactionCommitted::class, function() {
             throw new TestTransactionException();
         });

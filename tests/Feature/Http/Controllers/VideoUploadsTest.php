@@ -34,7 +34,7 @@ class VideoUploadsTest extends TestCase
     {
         Storage::fake();
         $file = UploadedFile::fake()->create('video.mp3')->size('500000');
-        $thumb = UploadedFile::fake()->create('thumb.png')->size('500000');
+        $thumb = UploadedFile::fake()->image('thumb.png')->size('500000');
 
         $response = $this->postVideo([
             'video_file' => $file,
@@ -70,7 +70,7 @@ class VideoUploadsTest extends TestCase
     {
         Storage::fake();
         $file = UploadedFile::fake()->create('video.jpeg')->size('500000');
-        $thumb = UploadedFile::fake()->create('thumb.png')->size('500000');
+        $thumb = UploadedFile::fake()->image('thumb.png')->size('500000');
 
         $video = factory(Video::class)->create();
         $response = $this->updateVideo(

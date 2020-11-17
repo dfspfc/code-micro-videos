@@ -27,6 +27,7 @@ class VideoTest extends TestCase
             'rating', 
             'duration',
             'video_file',
+            'thumb_file'
         ];
         $this->assertEquals($expected, $this->video->getFillable());
     }

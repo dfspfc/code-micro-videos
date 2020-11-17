@@ -12,10 +12,7 @@ class UploadFilesStub extends Model
 {
     use UploadFiles;
 
-    public static $fileFields = [
-        'file1',
-        'file2',
-    ];
+    protected $table = 'upload_file_stubs';
 
     protected $fillable = [
         'name', 
@@ -23,9 +20,14 @@ class UploadFilesStub extends Model
         'file2',
     ];
 
+    public static $fileFields = [
+        'file1',
+        'file2',
+    ];
+
     public static function makeTable()
     {
-        Schema::create('upload_files_stubs', function ($table) {
+        Schema::create('upload_file_stubs', function ($table) {
             $table->bigIncrements('id');
             $table->string('name');
             $table->string('file1')->nullable();
@@ -36,7 +38,7 @@ class UploadFilesStub extends Model
 
     public static function dropTable()
     {
-        Schema::dropIfExists('upload_files_stubs');
+        Schema::dropIfExists('upload_file_stubs');
     }
 
     protected function uploadDir()
