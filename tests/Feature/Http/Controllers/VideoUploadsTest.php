@@ -17,80 +17,106 @@ class VideoUploadsTest extends TestCase
     public function testCreatePassingFileAttributesLargerThanWhatIsAllowedShouldReturn422()
     {
         Storage::fake();
-        $file = UploadedFile::fake()->create('video.mp4')->size('600000');
-        $thumb = UploadedFile::fake()->create('thumb.jpg')->size('600000');
+        $videoFile = UploadedFile::fake()->create('video.mp4')->size('50000001');
+        $trailer = UploadedFile::fake()->create('video.mp4')->size('1000001');
+        $thumb = UploadedFile::fake()->image('thumb.jpg')->size('5001');
+        $banner = UploadedFile::fake()->image('thumb.jpg')->size('10001');
 
         $response = $this->postVideo([
-            'video_file' => $file,
-            'thumb_file' => $thumb
+            'video_file' => $videoFile,
+            'trailer_file' => $trailer,
+            'thumb_file' => $thumb,
+            'banner_file' => $banner,
         ]);
 
         $response->assertStatus(422);
-        $this->assertMaxFileSize($response, 'video_file', 500000);
-        $this->assertMaxFileSize($response, 'thumb_file', 500000);
+        $this->assertMaxFileSize($response, 'video_file', 50000000);
+        $this->assertMaxFileSize($response, 'trailer_file', 1000000);
+        $this->assertMaxFileSize($response, 'thumb_file', 5000);
+        $this->assertMaxFileSize($response, 'banner_file', 10000);
     }
 
     public function testCreatePassingFileTypesDifferentFromWhatIsAllowedShouldReturn422()
     {
         Storage::fake();
-        $file = UploadedFile::fake()->create('video.mp3')->size('500000');
-        $thumb = UploadedFile::fake()->image('thumb.png')->size('500000');
+        $videoFile = UploadedFile::fake()->create('video.mp3')->size('50000000');
+        $trailer = UploadedFile::fake()->create('video.mp2')->size('1000000');
+        $thumb = UploadedFile::fake()->image('thumb.test')->size('5000');
+        $banner = UploadedFile::fake()->image('thumb.png')->size('10000');
 
         $response = $this->postVideo([
-            'video_file' => $file,
+            'video_file' => $videoFile,
+            'trailer_file' => $trailer,
             'thumb_file' => $thumb,
+            'banner_file' => $banner,
         ]);
 
         $response->assertStatus(422);
         $this->assertFileType($response, 'video_file', 'mp4');
+        $this->assertFileType($response, 'trailer_file', 'mp4');
         $this->assertFileType($response, 'thumb_file', 'jpg, jpeg');
+        $this->assertFileType($response, 'banner_file', 'jpg, jpeg');
     }
 
     public function testUpdatePassingFileAttributesLargerThanWhatIsAllowedShouldReturn422()
     {
         Storage::fake();
-        $file = UploadedFile::fake()->create('video.mp4')->size('600000');
-        $thumb = UploadedFile::fake()->create('thumb.jpg')->size('600000');
+        $videoFile = UploadedFile::fake()->create('video.mp4')->size('50000001');
+        $trailer = UploadedFile::fake()->create('video.mp4')->size('1000001');
+        $thumb = UploadedFile::fake()->image('thumb.jpg')->size('5001');
+        $banner = UploadedFile::fake()->image('thumb.jpg')->size('10001');
 
         $video = factory(Video::class)->create();
         $response = $this->updateVideo(
             $video->id, 
             [
-                'video_file' => $file,
+                'video_file' => $videoFile,
+                'trailer_file' => $trailer,
                 'thumb_file' => $thumb,
+                'banner_file' => $banner,
             ]
         );
 
         $response->assertStatus(422);
-        $this->assertMaxFileSize($response, 'video_file', 500000);
-        $this->assertMaxFileSize($response, 'thumb_file', 500000);
+        $this->assertMaxFileSize($response, 'video_file', 50000000);
+        $this->assertMaxFileSize($response, 'trailer_file', 1000000);
+        $this->assertMaxFileSize($response, 'thumb_file', 5000);
+        $this->assertMaxFileSize($response, 'banner_file', 10000);
     }
 
     public function testUpdatePassingFileTypesDifferentFromWhatIsAllowedShouldReturn422()
     {
         Storage::fake();
-        $file = UploadedFile::fake()->create('video.jpeg')->size('500000');
-        $thumb = UploadedFile::fake()->image('thumb.png')->size('500000');
+        $videoFile = UploadedFile::fake()->create('video.mp3')->size('50000000');
+        $trailer = UploadedFile::fake()->create('video.mp2')->size('1000000');
+        $thumb = UploadedFile::fake()->image('thumb.test')->size('5000');
+        $banner = UploadedFile::fake()->image('thumb.png')->size('10000');
 
         $video = factory(Video::class)->create();
         $response = $this->updateVideo(
             $video->id, 
             [
-                'video_file' => $file,
+                'video_file' => $videoFile,
+                'trailer_file' => $trailer,
                 'thumb_file' => $thumb,
+                'banner_file' => $banner,
             ]
         );
 
         $response->assertStatus(422);
         $this->assertFileType($response, 'video_file', 'mp4');
+        $this->assertFileType($response, 'trailer_file', 'mp4');
         $this->assertFileType($response, 'thumb_file', 'jpg, jpeg');
+        $this->assertFileType($response, 'banner_file', 'jpg, jpeg');
     }
 
     public function testCreatePassingAllFileFieldsShouldCreateAndUploadAllFilesReturn201()
     {
         Storage::fake();
-        $file = UploadedFile::fake()->create('video.mp4')->size('1000');
-        $thumb = UploadedFile::fake()->image('thumb.jpg')->size('1000');
+        $videoFile = UploadedFile::fake()->create('video.mp4')->size('50000000');
+        $trailer = UploadedFile::fake()->create('video.mp4')->size('1000000');
+        $thumb = UploadedFile::fake()->image('thumb.jpg')->size('5000');
+        $banner = UploadedFile::fake()->image('thumb.jpg')->size('10000');
         $relatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $relatedGender = factory(Gender::class)->create(['name' => 'related gender']);
         $requestBody = [
@@ -102,31 +128,46 @@ class VideoUploadsTest extends TestCase
             'duration' => 20,
             'categories_id' => [$relatedCategory->id],
             'genders_id' => [$relatedGender->id],
-            'video_file' => $file,
+            'video_file' => $videoFile,
+            'trailer_file' => $trailer,
             'thumb_file' => $thumb,
+            'banner_file' => $banner,
         ];
         $response = $this->postVideo($requestBody);
 
         $response
             ->assertStatus(201)
-            ->assertJsonFragment(['video_file' => $file->hashName()]);
+            ->assertJsonFragment(['video_file' => $videoFile->hashName()]);
+        $response
+            ->assertStatus(201)
+            ->assertJsonFragment(['trailer_file' => $trailer->hashName()]);
         $response
             ->assertStatus(201)
             ->assertJsonFragment(['thumb_file' => $thumb->hashName()]);
+        $response
+            ->assertStatus(201)
+            ->assertJsonFragment(['banner_file' => $banner->hashName()]);
         Storage::assertExists(
-            "{$response->json()['id']}/{$file->hashName()}"
+            "{$response->json()['id']}/{$videoFile->hashName()}"
+        );
+        Storage::assertExists(
+            "{$response->json()['id']}/{$trailer->hashName()}"
         );
         Storage::assertExists(
             "{$response->json()['id']}/{$thumb->hashName()}"
+        );
+        Storage::assertExists(
+            "{$response->json()['id']}/{$banner->hashName()}"
         );
     }
 
     public function testUpdateShouldUpdateThenUploadTheNewFilesThenDeleteOldFilesAndReturn200()
     {
         Storage::fake();
-
-        $formerRelatedFile = UploadedFile::fake()->create('former_video.mp4')->size('1000');
-        $formerRelatedThumb = UploadedFile::fake()->image('thumb.jpg')->size('1000');
+        $formerRelatedVideoFile = UploadedFile::fake()->create('video.mp4')->size('50000000');
+        $formerRelatedTrailer = UploadedFile::fake()->create('video.mp4')->size('1000000');
+        $formerRelatedThumb = UploadedFile::fake()->image('thumb.jpg')->size('5000');
+        $formerRelatedBanner = UploadedFile::fake()->image('thumb.jpg')->size('10000');
         $video = factory(Video::class)->create([
             'title' => 'title test to be updated',
             'description' => 'description test to be updated',
@@ -134,14 +175,18 @@ class VideoUploadsTest extends TestCase
             'opened' => true,
             'rating' => 'L',
             'duration' => 20,
-            'video_file' => $formerRelatedFile,
+            'video_file' => $formerRelatedVideoFile,
+            'trailer_file' => $formerRelatedTrailer,
             'thumb_file' => $formerRelatedThumb,
+            'banner_file' => $formerRelatedBanner,
         ]);
 
         $updatedRelatedCategory = factory(Category::class)->create(['name' => 'related category']);
         $updatedRelatedGender = factory(Gender::class)->create(['name' => 'related gender']);
-        $updatedFile = UploadedFile::fake()->create('video.mp4')->size('1000');
-        $updatedThumb = UploadedFile::fake()->create('thumb.jpg')->size('1000');
+        $updatedVideoFile = UploadedFile::fake()->create('video.mp4')->size('50000000');
+        $updatedTrailer = UploadedFile::fake()->create('video.mp4')->size('1000000');
+        $updatedThumb = UploadedFile::fake()->image('thumb.jpg')->size('5000');
+        $updatedBanner = UploadedFile::fake()->image('thumb.jpg')->size('10000');
         $updateRequestBody = [
             'title' => 'updated title test',
             'description' => 'updated description test',
@@ -151,42 +196,62 @@ class VideoUploadsTest extends TestCase
             'duration' => 29,
             'categories_id' => [$updatedRelatedCategory->id],
             'genders_id' => [$updatedRelatedGender->id],
-            'video_file' => $updatedFile,
+            'video_file' => $updatedVideoFile,
+            'trailer_file' => $updatedTrailer,
             'thumb_file' => $updatedThumb,
+            'banner_file' => $updatedBanner,
         ];
         $response = $this->updateVideo($video->id, $updateRequestBody);
         
         $response
             ->assertStatus(200)
             ->assertJsonFragment([
-                'video_file' => $updatedFile->hashName(),
+                'video_file' => $updatedVideoFile->hashName(),
+                'trailer_file' => $updatedTrailer->hashName(),
                 'thumb_file' => $updatedThumb->hashName(),
+                'banner_file' => $updatedBanner->hashName(),
             ]);
         $this->assertDatabaseMissing(
             'videos',
             [
-                'video_file' => $formerRelatedFile->hashName(),
+                'video_file' => $formerRelatedVideoFile->hashName(),
+                'trailer_file' => $formerRelatedTrailer->hashName(),
                 'thumb_file' => $formerRelatedThumb->hashName(),
+                'banner_file' => $formerRelatedBanner->hashName(),
             ]
         );
         $this->assertDatabaseHas(
             'videos',
             [
-                'video_file' => $updatedFile->hashName(),
+                'video_file' => $updatedVideoFile->hashName(),
+                'trailer_file' => $updatedTrailer->hashName(),
                 'thumb_file' => $updatedThumb->hashName(),
+                'banner_file' => $updatedBanner->hashName(),
             ]
         );
         Storage::assertMissing(
-            "{$response->json()['id']}/{$formerRelatedFile->hashName()}"
+            "{$response->json()['id']}/{$formerRelatedVideoFile->hashName()}"
+        );
+        Storage::assertMissing(
+            "{$response->json()['id']}/{$formerRelatedTrailer->hashName()}"
         );
         Storage::assertMissing(
             "{$response->json()['id']}/{$formerRelatedThumb->hashName()}"
         );
+        Storage::assertMissing(
+            "{$response->json()['id']}/{$formerRelatedBanner->hashName()}"
+        );
         Storage::assertExists(
-            "{$response->json()['id']}/{$updatedFile->hashName()}"
+            "{$response->json()['id']}/{$updatedVideoFile->hashName()}"
+        );
+        Storage::assertExists(
+            "{$response->json()['id']}/{$updatedTrailer->hashName()}"
         );
         Storage::assertExists(
             "{$response->json()['id']}/{$updatedThumb->hashName()}"
+        );
+        Storage::assertExists(
+            "{$response->json()['id']}/{$updatedBanner->hashName()}"
         );
     }
 }
