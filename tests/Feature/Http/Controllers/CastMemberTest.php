@@ -3,6 +3,7 @@
 namespace Tests\Feature\Http\Controllers;
 
 use App\Models\CastMember;
+use App\Http\Resources\CastMember as CastMemberResource;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 
@@ -10,24 +11,29 @@ class CastMemberTest extends TestCase
 {
     use DatabaseMigrations, JsonFragmentValidation;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->castMember = factory(CastMember::class)->create();
+    }
+
     public function testListShouldReturn200()
     {
-        $castMember = factory(CastMember::class)->create()->toArray();
         $response = $this->get(route('cast_members.index'));
         
         $response
             ->assertStatus(200)
-            ->assertJson([$castMember]);
+            ->assertJson([$this->castMember->toArray()]);
     }
 
     public function testShowSpecificCastMemberShouldReturn200()
     {
-        $castMember = factory(CastMember::class)->create();
-        $response = $this->get(route('cast_members.show', ['cast_member' => $castMember->id]));
+        $response = $this->get(route('cast_members.show', ['cast_member' => $this->castMember->id]));
         
+        $resource = new CastMemberResource(CastMember::find($this->castMember->id));
         $response
             ->assertStatus(200)
-            ->assertJson($castMember->toArray());
+            ->assertJson($resource->response()->getData(true));
     }
 
     public function testCreatePassingNoAttributesShouldReturn422()

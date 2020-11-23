@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Category;
+use App\Http\Resources\Category as CategoryResource;
 
 class CategoryController extends BaseApiController
 {
@@ -25,5 +26,15 @@ class CategoryController extends BaseApiController
     protected function updateRules()
     {
         return $this->rules;
+    }
+
+    protected function resource()
+    {
+        return CategoryResource::class;
+    }
+
+    protected function resourceCollection()
+    {
+        return $this->resource();
     }
 }

@@ -2,7 +2,6 @@
 
 namespace Tests\Unit\Models;
 
-use App\Models\Traits\UploadFiles;
 use Tests\Stubs\Models\UploadFilesStub;
 use Tests\TestCase;
 use Illuminate\Http\UploadedFile;
@@ -12,7 +11,8 @@ class UploadFilesTest extends TestCase
 {
     private $uploadFile;
 
-    protected function setUp() : void {
+    protected function setUp() : void
+    {
         parent::setUp();
         $this->uploadFile = new UploadFilesStub();
     }

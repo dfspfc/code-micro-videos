@@ -3,6 +3,7 @@
 namespace Tests\Feature\Http\Controllers;
 
 use App\Models\Category;
+use App\Http\Resources\Category as CategoryResource;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
 
@@ -10,24 +11,28 @@ class CategoryTest extends TestCase
 {
     use DatabaseMigrations, JsonFragmentValidation;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->category = factory(Category::class)->create();
+    }
+
     public function testListShouldReturn200()
     {
-        $category = factory(Category::class)->create()->toArray();
         $response = $this->get(route('categories.index'));
-
         $response
             ->assertStatus(200)
-            ->assertJson([$category]);
+            ->assertJson([$this->category->toArray()]);
     }
 
     public function testShowSpecificCategoryShouldReturn200()
     {
-        $category = factory(Category::class)->create();
-        $response = $this->get(route('categories.show', ['category' => $category->id]));
+        $response = $this->get(route('categories.show', ['category' => $this->category->id]));
         
+        $resource = new CategoryResource(Category::find($this->category->id));
         $response
             ->assertStatus(200)
-            ->assertJson($category->toArray());
+            ->assertJson($resource->response()->getData(true));
     }
 
     public function testCreatePassingNoAttributesShouldReturn422()
@@ -60,12 +65,11 @@ class CategoryTest extends TestCase
 
     public function testUpdateNotPassingAnyAttributeShouldReturn422()
     {
-        $category = factory(Category::class)->create();
         $response = $this->json(
             'PUT',
             route(
                 'categories.update',
-                ['category' => $category->id],
+                ['category' => $this->category->id],
             ),
             []
         );
@@ -74,12 +78,11 @@ class CategoryTest extends TestCase
 
     public function testUpdatePassingAttributesLargeThan255CharactersShouldReturn422()
     {
-        $category = factory(Category::class)->create();
         $response = $this->json(
             'PUT',
             route(
                 'categories.update',
-                ['category' => $category->id],
+                ['category' => $this->category->id],
             ),
             ['name' => str_repeat('a', 256)]
         );
@@ -88,12 +91,11 @@ class CategoryTest extends TestCase
 
     public function testUpdatePassingAttributesDifferentFromBooleanShouldReturn422()
     {
-        $category = factory(Category::class)->create();
         $response = $this->json(
             'PUT',
             route(
                 'categories.update',
-                ['category' => $category->id],
+                ['category' => $this->category->id],
             ),
             [
                 'is_active' => 'a',
@@ -109,14 +111,14 @@ class CategoryTest extends TestCase
             route('categories.store'),
             ['name' => 'valid name']
         );
-        $id = $response->json('id');
+        $id = $response->json('data.id');
         $category = Category::find($id);
         
         $response
             ->assertStatus(201)
-            ->assertJson($category->toArray());
-        $this->assertTrue($response->json('is_active'));
-        $this->assertNull($response->json('description'));
+            ->assertJson(['data' => $category->toArray()]);
+        $this->assertTrue($response->json('data.is_active'));
+        $this->assertNull($response->json('data.description'));
     }
 
     public function testCreatePassingAllFiledsShouldCreateAndReturn201()
@@ -173,18 +175,17 @@ class CategoryTest extends TestCase
 
     public function testDeleteShouldSoftDeleteCategoryAndReturn204()
     {
-        $category = factory(Category::class)->create();
         $response = $this->json(
             'DELETE',
             route(
                 'categories.destroy',
-                ['category' => $category->id],
+                ['category' => $this->category->id],
             ),
             []
         );
         $response->assertStatus(204);
 
-        $deletedCategory = Category::where('id', $category->id)
+        $deletedCategory = Category::where('id', $this->category->id)
             ->withTrashed()
             ->get()
             ->first();

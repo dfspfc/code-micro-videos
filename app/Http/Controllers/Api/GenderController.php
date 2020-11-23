@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Gender;
+use App\Http\Resources\Gender as GenderResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -25,7 +26,8 @@ class GenderController extends BaseApiController
         });
         $gender->refresh();
         
-        return $gender;
+        $resource = $this->resource();
+        return new $resource($gender);
     }
 
     public function update(Request $request, $id)
@@ -36,7 +38,9 @@ class GenderController extends BaseApiController
         return DB::transaction(function () use ($request, $validatedData, $gender) {
             $gender->update($validatedData);
             $gender->categories()->sync($request->get('categories_id'));
-            return $gender;
+
+            $resource = $this->resource();
+            return new $resource($gender);
         });
     }
 
@@ -53,5 +57,15 @@ class GenderController extends BaseApiController
     protected function updateRules()
     {
         return $this->rules;
+    }
+
+    protected function resource()
+    {
+        return GenderResource::class;
+    }
+
+    protected function resourceCollection()
+    {
+        return $this->resource();
     }
 }

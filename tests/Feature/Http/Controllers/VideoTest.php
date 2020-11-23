@@ -5,6 +5,7 @@ namespace Tests\Feature\Http\Controllers;
 use App\Models\Category;
 use App\Models\Traits\Uuid;
 use App\Models\Video;
+use App\Http\Resources\Video as VideoResource;
 use App\Models\Gender;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -13,24 +14,29 @@ class VideoTest extends TestCase
 {
     use DatabaseMigrations, JsonFragmentValidation, VideoBase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->video = factory(Video::class)->create();
+    }
+
     public function testListShouldReturn200()
     {
-        $video = factory(Video::class)->create()->toArray();
         $response = $this->get(route('videos.index'));
 
         $response
             ->assertStatus(200)
-            ->assertJson([$video]);
+            ->assertJson([$this->video->toArray()]);
     }
 
     public function testShowSpecificVideoShouldReturn200()
     {
-        $video = factory(Video::class)->create();
-        $response = $this->get(route('videos.show', ['video' => $video->id]));
+        $response = $this->get(route('videos.show', ['video' => $this->video->id]));
         
+        $resource = new VideoResource(Video::find($this->video->id));
         $response
             ->assertStatus(200)
-            ->assertJson($video->toArray());
+            ->assertJson($resource->response()->getData(true));
     }
 
     public function testCreatePassingNoAttributesShouldReturn422()
@@ -268,14 +274,14 @@ class VideoTest extends TestCase
             'category_video',
             [
                 'category_id' => $relatedCategory->id,
-                'video_id' => $response->json()['id'],
+                'video_id' => $response->json('data.id'),
             ]
         );
         $this->assertDatabaseHas(
             'gender_video',
             [
                 'gender_id' => $relatedGender->id,
-                'video_id' => $response->json()['id'],
+                'video_id' => $response->json('data.id'),
             ]
         );
     }
@@ -337,14 +343,14 @@ class VideoTest extends TestCase
             'category_video',
             [
                 'category_id' => $updatedRelatedCategory->id,
-                'video_id' => $response->json()['id'],
+                'video_id' => $response->json('data.id'),
             ]
         );
         $this->assertDatabaseHas(
             'gender_video',
             [
                 'gender_id' => $updatedRelatedGender->id,
-                'video_id' => $response->json()['id'],
+                'video_id' => $response->json('data.id'),
             ]
         );
     }

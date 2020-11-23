@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\CastMember;
+use App\Http\Resources\CastMember as CastMemberResource;
 
 class CastMemberController extends BaseApiController
 {
@@ -29,5 +30,15 @@ class CastMemberController extends BaseApiController
     protected function updateRules()
     {
         return $this->rules;
+    }
+
+    protected function resource()
+    {
+        return CastMemberResource::class;
+    }
+
+    protected function resourceCollection()
+    {
+        return $this->resource();
     }
 }

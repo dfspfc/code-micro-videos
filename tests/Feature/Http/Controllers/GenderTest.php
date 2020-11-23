@@ -4,6 +4,7 @@ namespace Tests\Feature\Http\Controllers;
 
 use App\Http\Controllers\Api\GenderController;
 use App\Models\Gender;
+use App\Http\Resources\Gender as GenderResource;
 use App\Models\Category;
 use Tests\TestCase;
 use Illuminate\Foundation\Testing\DatabaseMigrations;
@@ -16,24 +17,29 @@ class GenderTest extends TestCase
 {
     use DatabaseMigrations, JsonFragmentValidation;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->gender = factory(Gender::class)->create();
+    }
+
     public function testListShouldReturn200()
     {
-        $gender = factory(Gender::class)->create()->toArray();
         $response = $this->get(route('genders.index'));
         
         $response
             ->assertStatus(200)
-            ->assertJson([$gender]);
+            ->assertJson([$this->gender->toArray()]);
     }
 
     public function testShowSpecificGenderShouldReturn200()
     {
-        $gender = factory(Gender::class)->create();
-        $response = $this->get(route('genders.show', ['gender' => $gender->id]));
+        $response = $this->get(route('genders.show', ['gender' => $this->gender->id]));
         
+        $resource = new GenderResource(Gender::find($this->gender->id));
         $response
             ->assertStatus(200)
-            ->assertJson($gender->toArray());
+            ->assertJson($resource->response()->getData(true));
     }
 
     public function testCreatePassingNoAttributesShouldReturn422()
@@ -184,18 +190,20 @@ class GenderTest extends TestCase
                 'categories_id' => [$relatedCategory->id]
             ]
         );
-        $id = $response->json('id');
-        $gender = Gender::find($id);
+        $genderId = $response->json('data.id');
+        $gender = Gender::find($genderId);
         
+        $resource = new GenderResource(Gender::find($gender->id));
         $response
             ->assertStatus(201)
-            ->assertJson($gender->toArray());
-        $this->assertTrue($response->json('is_active'));
+            ->assertJson($resource->response()->getData(true));
+
+        $this->assertTrue($response->json('data.is_active'));
         $this->assertDatabaseHas(
             'category_gender',
             [
                 'category_id' => $relatedCategory->id,
-                'gender_id' => $response->json()['id'],
+                'gender_id' => $genderId,
             ]
         );
     }
@@ -220,11 +228,12 @@ class GenderTest extends TestCase
                 'name' => $requestBody['name'],
                 'is_active' => $requestBody['is_active'],
             ]);
+
         $this->assertDatabaseHas(
             'category_gender',
             [
                 'category_id' => $relatedCategory->id,
-                'gender_id' => $response->json()['id'],
+                'gender_id' => $response->json('data.id'),
             ]
         );
     }
@@ -334,7 +343,7 @@ class GenderTest extends TestCase
             $hasError = true;
             $controller->store($request);
         } catch (TestTransactionException $e) {
-            $this->assertCount(0, Gender::all());
+            $this->assertCount(1, Gender::all());
         }
         $this->assertTrue($hasError);
     }

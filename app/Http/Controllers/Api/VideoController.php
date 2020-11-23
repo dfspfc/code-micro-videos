@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Models\Video;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use App\Http\Resources\Video as VideoResource;
 
 class VideoController extends BaseApiController
 {
@@ -34,7 +34,8 @@ class VideoController extends BaseApiController
         $video = $this->model()::create($validatedData);
         $video->refresh();
         
-        return $video;
+        $resource = $this->resource();
+        return new $resource($video);
     }
 
     public function update(Request $request, $id)
@@ -43,7 +44,8 @@ class VideoController extends BaseApiController
         $video = $this->findObjectFromModel($id);
         $video->update($validatedData);
         
-        return $video;
+        $resource = $this->resource();
+        return new $resource($video);
     }
 
     protected function model()
@@ -59,5 +61,15 @@ class VideoController extends BaseApiController
     protected function updateRules()
     {
         return $this->rules;
+    }
+
+    protected function resource()
+    {
+        return VideoResource::class;
+    }
+
+    protected function resourceCollection()
+    {
+        return $this->resource();
     }
 }
