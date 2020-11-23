@@ -6,6 +6,7 @@ use App\Models\Gender;
 use App\Http\Resources\Gender as GenderResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class GenderController extends BaseApiController
 {
@@ -14,6 +15,19 @@ class GenderController extends BaseApiController
         'is_active' => 'boolean ',
         'categories_id' => 'required|array|exists:categories,id,deleted_at,NULL',
     ];
+
+    public function index()
+    {
+        $genders = !$this->paginationSize ? 
+            $this->model()::with('categories')->get() :
+            $this->model()::with('categories')->paginate($this->paginationSize);
+
+        $resourceCollectionClass = $this->resourceCollection();
+        $refClass = new \ReflectionClass($this->resourceCollection());
+        return $refClass->isSubclassOf(ResourceCollection::class)
+            ? new $resourceCollectionClass($genders)
+            : $resourceCollectionClass::collection($genders);
+    }
 
     public function store(Request $request)
     {

@@ -11,6 +11,17 @@ class CastMemberTest extends TestCase
 {
     use DatabaseMigrations, JsonFragmentValidation;
 
+    private $castMember;
+
+    private $fieldsSerialized = [
+        'id',
+        'name',
+        'type',
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -23,7 +34,18 @@ class CastMemberTest extends TestCase
         
         $response
             ->assertStatus(200)
-            ->assertJson([$this->castMember->toArray()]);
+            ->assertJsonStructure(
+                [
+                    'data' => [
+                        '*' => $this->fieldsSerialized
+                    ],
+                    'meta' => [],
+                    'links' => []
+                ]
+            );
+            
+        $resource = CastMemberResource::collection(collect([$this->castMember]));
+        $response->assertJson($resource->response()->getData(true));
     }
 
     public function testShowSpecificCastMemberShouldReturn200()

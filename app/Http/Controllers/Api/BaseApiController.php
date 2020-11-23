@@ -4,10 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
 abstract class BaseApiController extends Controller
 {
-    protected $defaultPerPage = 15;
+    protected $paginationSize = 15;
 
     protected abstract function model();
     protected abstract function storeRules();
@@ -18,30 +19,14 @@ abstract class BaseApiController extends Controller
 
     public function index()
     {
-        return $this->model()::all();
-    }
-
-    /*public function index(Request $request)
-    {
-        $perPage = (int) $request->get('per_page', $this->defaultPerPage);
-        $hasFilter = in_array(Filterable::class, class_uses($this->model()));
-
-        $query = $this->queryBuilder();
-
-        if($hasFilter){
-            $query = $query->filter($request->all());
-        }
-
-        $data = $request->has('all') || !$this->defaultPerPage
-            ? $query->get()
-            : $query->paginate($perPage);
+        $data = !$this->paginationSize ? $this->model()::all() : $this->model()::paginate($this->paginationSize);
 
         $resourceCollectionClass = $this->resourceCollection();
         $refClass = new \ReflectionClass($this->resourceCollection());
         return $refClass->isSubclassOf(ResourceCollection::class)
             ? new $resourceCollectionClass($data)
             : $resourceCollectionClass::collection($data);
-    }*/
+    }
     
     public function show($id)
     {

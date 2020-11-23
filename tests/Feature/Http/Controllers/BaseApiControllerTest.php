@@ -36,11 +36,15 @@ class BaseApiControllerTest extends TestCase
     {
         $expectedCategoryStub = CategoryStub::create(SELF::CATEGORY_DATA_SAMPLE)
             ->toArray();
-                
+        
+        $resource = $this->controller->index();
+        $serialized = $resource->response()->getData(true);
         $this->assertEquals(
             [$expectedCategoryStub],
-            $this->controller->index()->toArray()
+            $serialized['data']
         );
+        $this->assertArrayHasKey('meta', $serialized);
+        $this->assertArrayHasKey('links', $serialized);
     }
 
     public function testValidationFailingShouldThrowAnException()

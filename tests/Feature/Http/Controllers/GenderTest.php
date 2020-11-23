@@ -17,6 +17,28 @@ class GenderTest extends TestCase
 {
     use DatabaseMigrations, JsonFragmentValidation;
 
+    private $gender;
+
+    private $fieldsSerialized = [
+        'id',
+        'name',
+        'is_active',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+        'categories' => [
+            '*' => [
+                'id',
+                'name',
+                'description',
+                'is_active',
+                'created_at',
+                'updated_at',
+                'deleted_at'
+            ]
+        ]
+    ];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -29,8 +51,20 @@ class GenderTest extends TestCase
         
         $response
             ->assertStatus(200)
-            ->assertJson([$this->gender->toArray()]);
+            ->assertJsonStructure(
+                [
+                    'data' => [
+                        '*' => $this->fieldsSerialized
+                    ],
+                    'meta' => [],
+                    'links' => []
+                ]
+            );
+            
+        $resource = GenderResource::collection(collect([$this->gender]));
+        $response->assertJson($resource->response()->getData(true));
     }
+    
 
     public function testShowSpecificGenderShouldReturn200()
     {

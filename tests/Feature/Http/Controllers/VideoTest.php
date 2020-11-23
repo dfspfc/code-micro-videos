@@ -14,6 +14,47 @@ class VideoTest extends TestCase
 {
     use DatabaseMigrations, JsonFragmentValidation, VideoBase;
 
+    private $video;
+
+    private $fieldsSerialized = [
+        'id',
+        'title',
+        'description',
+        'year_launched',
+        'rating',
+        'duration',
+        'rating',
+        'opened',
+        'thumb_file',
+        'banner_file',
+        'video_file',
+        'trailer_file',
+        'created_at',
+        'updated_at',
+        'deleted_at',
+        'categories' => [
+            '*' => [
+                'id',
+                'name',
+                'description',
+                'is_active',
+                'created_at',
+                'updated_at',
+                'deleted_at'
+            ]
+        ],
+        'genders' => [
+            '*' => [
+                'id',
+                'name',
+                'is_active',
+                'created_at',
+                'updated_at',
+                'deleted_at',
+            ]
+        ]
+    ];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -23,10 +64,21 @@ class VideoTest extends TestCase
     public function testListShouldReturn200()
     {
         $response = $this->get(route('videos.index'));
-
+        
         $response
             ->assertStatus(200)
-            ->assertJson([$this->video->toArray()]);
+            ->assertJsonStructure(
+                [
+                    'data' => [
+                        '*' => $this->fieldsSerialized
+                    ],
+                    'meta' => [],
+                    'links' => []
+                ]
+            );
+            
+        $resource = VideoResource::collection(collect([$this->video]));
+        $response->assertJson($resource->response()->getData(true));
     }
 
     public function testShowSpecificVideoShouldReturn200()

@@ -11,6 +11,18 @@ class CategoryTest extends TestCase
 {
     use DatabaseMigrations, JsonFragmentValidation;
 
+    private $category;
+
+    private $fieldsSerialized = [
+        'id',
+        'name',
+        'description',
+        'is_active',
+        'created_at',
+        'updated_at',
+        'deleted_at'
+    ];
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -20,9 +32,21 @@ class CategoryTest extends TestCase
     public function testListShouldReturn200()
     {
         $response = $this->get(route('categories.index'));
+        
         $response
             ->assertStatus(200)
-            ->assertJson([$this->category->toArray()]);
+            ->assertJsonStructure(
+                [
+                    'data' => [
+                        '*' => $this->fieldsSerialized
+                    ],
+                    'meta' => [],
+                    'links' => []
+                ]
+            );
+            
+        $resource = CategoryResource::collection(collect([$this->category]));
+        $response->assertJson($resource->response()->getData(true));
     }
 
     public function testShowSpecificCategoryShouldReturn200()

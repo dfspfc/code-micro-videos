@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Models\Video;
 use Illuminate\Http\Request;
 use App\Http\Resources\Video as VideoResource;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 
 class VideoController extends BaseApiController
 {
@@ -26,6 +27,19 @@ class VideoController extends BaseApiController
             'thumb_file' => 'image|mimes:jpg,jpeg|max:5000',
             'banner_file' => 'image|mimes:jpg,jpeg|max:10000',
         ];
+    }
+
+    public function index()
+    {
+        $videos = !$this->paginationSize ? 
+            $this->model()::with('categories')->with('genders')->get() :
+            $this->model()::with('categories')->with('genders')->paginate($this->paginationSize);
+
+        $resourceCollectionClass = $this->resourceCollection();
+        $refClass = new \ReflectionClass($this->resourceCollection());
+        return $refClass->isSubclassOf(ResourceCollection::class)
+            ? new $resourceCollectionClass($videos)
+            : $resourceCollectionClass::collection($videos);
     }
 
     public function store(Request $request)
