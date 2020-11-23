@@ -60,8 +60,9 @@ class BaseApiControllerTest extends TestCase
     {
         $categoryStub = CategoryStub::create(SELF::CATEGORY_DATA_SAMPLE);
         $result = $this->controller->show($categoryStub->id);
+        
         $this->assertEquals(
-            $result->toArray(),
+            $result->resource->toArray(),
             CategoryStub::find($categoryStub->id)->toArray()
         );
     }
@@ -76,7 +77,7 @@ class BaseApiControllerTest extends TestCase
             ->shouldReceive('all')
             ->once()
             ->andReturn($sampleData);
-        $result = $this->controller->store($mockRequest)->toArray();
+        $result = $this->controller->store($mockRequest)->resource->toArray();
 
         $this->assertEquals($sampleData['name'], $result['name']);
     }
@@ -92,7 +93,7 @@ class BaseApiControllerTest extends TestCase
         $result = $this->controller->update($mockRequest, $categoryStub->id);
 
         $this->assertEquals(
-            $result->toArray(),
+            $result->resource->toArray(),
             CategoryStub::find($categoryStub->id)->toArray()
         );
     }
