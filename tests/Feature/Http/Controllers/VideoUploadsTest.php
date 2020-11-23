@@ -148,16 +148,16 @@ class VideoUploadsTest extends TestCase
             ->assertStatus(201)
             ->assertJsonFragment(['banner_file' => $banner->hashName()]);
         Storage::assertExists(
-            "{$response->json()['id']}/{$videoFile->hashName()}"
+            "{$response->json('data.id')}/{$videoFile->hashName()}"
         );
         Storage::assertExists(
-            "{$response->json()['id']}/{$trailer->hashName()}"
+            "{$response->json('data.id')}/{$trailer->hashName()}"
         );
         Storage::assertExists(
-            "{$response->json()['id']}/{$thumb->hashName()}"
+            "{$response->json('data.id')}/{$thumb->hashName()}"
         );
         Storage::assertExists(
-            "{$response->json()['id']}/{$banner->hashName()}"
+            "{$response->json('data.id')}/{$banner->hashName()}"
         );
     }
 
@@ -230,28 +230,28 @@ class VideoUploadsTest extends TestCase
             ]
         );
         Storage::assertMissing(
-            "{$response->json()['id']}/{$formerRelatedVideoFile->hashName()}"
+            "{$response->json('data.id')}/{$formerRelatedVideoFile->hashName()}"
         );
         Storage::assertMissing(
-            "{$response->json()['id']}/{$formerRelatedTrailer->hashName()}"
+            "{$response->json('data.id')}/{$formerRelatedTrailer->hashName()}"
         );
         Storage::assertMissing(
-            "{$response->json()['id']}/{$formerRelatedThumb->hashName()}"
+            "{$response->json('data.id')}/{$formerRelatedThumb->hashName()}"
         );
         Storage::assertMissing(
-            "{$response->json()['id']}/{$formerRelatedBanner->hashName()}"
+            "{$response->json('data.id')}/{$formerRelatedBanner->hashName()}"
         );
         Storage::assertExists(
-            "{$response->json()['id']}/{$updatedVideoFile->hashName()}"
+            "{$response->json('data.id')}/{$updatedVideoFile->hashName()}"
         );
         Storage::assertExists(
-            "{$response->json()['id']}/{$updatedTrailer->hashName()}"
+            "{$response->json('data.id')}/{$updatedTrailer->hashName()}"
         );
         Storage::assertExists(
-            "{$response->json()['id']}/{$updatedThumb->hashName()}"
+            "{$response->json('data.id')}/{$updatedThumb->hashName()}"
         );
         Storage::assertExists(
-            "{$response->json()['id']}/{$updatedBanner->hashName()}"
+            "{$response->json('data.id')}/{$updatedBanner->hashName()}"
         );
     }
 }
